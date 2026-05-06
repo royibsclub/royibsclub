@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מדריך Premiere AI Studio</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    background: #0f0f13;
+    color: #e2e8f0;
+    direction: rtl;
+    line-height: 1.7;
+  }
+  .page {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 32px;
+  }
+  h1 {
+    font-size: 32px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    font-size: 15px;
+    color: #94a3b8;
+    margin-bottom: 48px;
+  }
+  h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #c4b5fd;
+    margin: 48px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #1e1e2e;
+  }
+  h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #a5b4fc;
+    margin: 24px 0 10px;
+  }
+  p { margin-bottom: 12px; color: #cbd5e1; }
+  ul, ol {
+    padding-right: 20px;
+    margin-bottom: 14px;
+    color: #cbd5e1;
+  }
+  li { margin-bottom: 6px; }
+  code {
+    font-family: 'Fira Code', 'Cascadia Code', monospace;
+    background: #1e1e2e;
+    color: #a5b4fc;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 13px;
+  }
+  pre {
+    background: #1e1e2e;
+    border: 1px solid #2d2d42;
+    border-radius: 8px;
+    padding: 16px 18px;
+    overflow-x: auto;
+    margin: 14px 0;
+    direction: ltr;
+    text-align: left;
+  }
+  pre code {
+    background: none;
+    padding: 0;
+    color: #e2e8f0;
+    font-size: 13px;
+  }
+  .card {
+    background: #161622;
+    border: 1px solid #2d2d42;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 16px 0;
+  }
+  .step {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    margin-bottom: 20px;
+  }
+  .step-num {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    font-weight: 700;
+    font-size: 14px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .step-body { flex: 1; }
+  .step-title { font-weight: 700; font-size: 15px; color: #e2e8f0; margin-bottom: 4px; }
+  .tab-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .tab-card {
+    background: #161622;
+    border: 1px solid #2d2d42;
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .tab-icon { font-size: 22px; margin-bottom: 6px; }
+  .tab-name { font-weight: 700; font-size: 13px; color: #e2e8f0; margin-bottom: 4px; }
+  .tab-desc { font-size: 11px; color: #94a3b8; line-height: 1.5; }
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-right: 6px;
+  }
+  .badge-required { background: rgba(239,68,68,0.2); color: #f87171; }
+  .badge-optional { background: rgba(99,102,241,0.2); color: #a5b4fc; }
+  .badge-auto { background: rgba(52,211,153,0.2); color: #34d399; }
+  .warning {
+    background: rgba(251,191,36,0.08);
+    border: 1px solid rgba(251,191,36,0.3);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #fcd34d;
+    margin: 16px 0;
+  }
+  .success-block {
+    background: rgba(52,211,153,0.08);
+    border: 1px solid rgba(52,211,153,0.3);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #34d399;
+    margin: 16px 0;
+  }
+  .workflow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 20px 0;
+  }
+  .wf-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: #161622;
+    border: 1px solid #2d2d42;
+  }
+  .wf-step:first-child { border-radius: 10px 10px 0 0; }
+  .wf-step:last-child { border-radius: 0 0 10px 10px; }
+  .wf-step + .wf-step { border-top: none; }
+  .wf-arrow { color: #6366f1; font-size: 18px; margin: 0 auto; display: block; text-align: center; padding: 2px 0; }
+  .wf-icon { font-size: 20px; flex-shrink: 0; }
+  .wf-text { flex: 1; }
+  .wf-title { font-size: 13px; font-weight: 600; color: #e2e8f0; }
+  .wf-sub { font-size: 11px; color: #64748b; }
+  .manual-badge { font-size: 9px; background: #2d2d42; color: #94a3b8; padding: 1px 6px; border-radius: 4px; }
+  .auto-badge { font-size: 9px; background: rgba(99,102,241,0.2); color: #a5b4fc; padding: 1px 6px; border-radius: 4px; }
+  hr { border: none; border-top: 1px solid #1e1e2e; margin: 40px 0; }
+  .toc a { color: #a5b4fc; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc li { margin-bottom: 4px; font-size: 14px; }
+  @media print {
+    body { background: white; color: #1e293b; }
+    .card, .tab-card, .wf-step { background: #f8fafc; border-color: #e2e8f0; }
+    h1 { -webkit-text-fill-color: #6366f1; }
+    code { background: #f1f5f9; color: #4f46e5; }
+    pre { background: #f1f5f9; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Title -->
+  <div style="text-align:center; margin-bottom: 48px; padding: 32px 0 24px;">
+    <div style="font-size:48px; margin-bottom:12px;">🎬</div>
+    <h1>Premiere AI Studio</h1>
+    <p class="subtitle">מדריך הפעלה מלא — מהתקנה עד ייצור סרטון ראשון</p>
+    <p style="font-size:12px; color:#475569;">גרסה 1.0 | מאי 2026</p>
+  </div>
+
+  <!-- TOC -->
+  <div class="card">
+    <h3 style="margin-top:0; color:#e2e8f0;">תוכן עניינים</h3>
+    <ol class="toc">
+      <li><a href="#setup">התקנה והפעלה</a></li>
+      <li><a href="#api-keys">הגדרת API Keys</a></li>
+      <li><a href="#sheets">חיבור Google Sheets</a></li>
+      <li><a href="#tabs">סקירת הטאבים</a></li>
+      <li><a href="#workflow">זרימת עבודה — מגאנט לסרטון</a></li>
+      <li><a href="#captions">עבודה עם כתוביות</a></li>
+      <li><a href="#characters">ניהול דמויות</a></li>
+      <li><a href="#tips">טיפים וטריקים</a></li>
+    </ol>
+  </div>
+
+  <!-- 1. Setup -->
+  <h2 id="setup">1. התקנה והפעלה</h2>
+
+  <h3>דרישות מקדימות</h3>
+  <ul>
+    <li>Node.js 18+ מותקן</li>
+    <li>Adobe Premiere Pro 2024+</li>
+    <li>מפתח Anthropic API (claude.ai → API)</li>
+  </ul>
+
+  <h3>הפעלת השרת</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">פתח טרמינל בתיקיית הפרויקט</div>
+      <pre><code>cd /path/to/royibsclub</code></pre>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">צור קובץ .env בתיקיית server</div>
+      <pre><code># server/.env
+ANTHROPIC_API_KEY=sk-ant-api03-...
+OPENAI_API_KEY=sk-proj-...        # לזיהוי קול (אופציונלי)
+GOOGLE_SERVICE_ACCOUNT_JSON=./google-service-account.json
+VIDEOS_OUTPUT_DIR=~/Videos</code></pre>
+      <p style="font-size:12px; color:#64748b;">אפשר גם להגדיר ישירות מהממשק בטאב ⚙️ הגדרות.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">הפעל את השרת</div>
+      <pre><code>cd server
+npm install
+npm run dev</code></pre>
+      <p>השרת יעלה על <code>http://localhost:3333</code>. תראה: <code>Premiere AI Server running</code></p>
+    </div>
+  </div>
+
+  <h3>התקנת התוסף ב-Premiere</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">בנה את התוסף</div>
+      <pre><code>cd plugin
+npm install
+npm run build</code></pre>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">העתק את התוסף לתיקיית Premiere</div>
+      <p><strong>Windows:</strong></p>
+      <pre><code>%APPDATA%\Adobe\CEP\extensions\PremierAI\</code></pre>
+      <p><strong>macOS:</strong></p>
+      <pre><code>~/Library/Application Support/Adobe/CEP/extensions/PremierAI/</code></pre>
+      <p>העתק את תוכן תיקיית <code>plugin/dist/</code> לשם.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">הפעל Premiere ופתח את התוסף</div>
+      <p>Window → Extensions → Premiere AI Studio</p>
+    </div>
+  </div>
+
+  <div class="success-block">
+    ✅ אם ה-LED הירוק בפינה הימנית עליונה של הפלאגין דולק — השרת מחובר!
+  </div>
+
+  <!-- 2. API Keys -->
+  <h2 id="api-keys">2. הגדרת API Keys</h2>
+
+  <p>לחץ על טאב ⚙️ (הגדרות) בפלאגין להגדרת כל המפתחות מממשק נוח.</p>
+
+  <div class="card">
+    <table style="width:100%; font-size:13px; border-collapse:collapse;">
+      <thead>
+        <tr style="border-bottom:1px solid #2d2d42;">
+          <th style="text-align:right; padding:8px 0; color:#94a3b8; font-weight:600;">שירות</th>
+          <th style="text-align:right; padding:8px 0; color:#94a3b8; font-weight:600;">לאיזה פיצ'ר</th>
+          <th style="text-align:right; padding:8px 0; color:#94a3b8; font-weight:600;">נדרש</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid #1e1e2e;">
+          <td style="padding:10px 0; font-weight:600;">Anthropic</td>
+          <td style="padding:10px 0; color:#94a3b8;">צ'אט, Pipeline, ניתוח, מחקר</td>
+          <td><span class="badge badge-required">חובה</span></td>
+        </tr>
+        <tr style="border-bottom:1px solid #1e1e2e;">
+          <td style="padding:10px 0; font-weight:600;">OpenAI (Whisper)</td>
+          <td style="padding:10px 0; color:#94a3b8;">זיהוי דיבור אוטומטי בכתוביות</td>
+          <td><span class="badge badge-optional">אופציונלי</span></td>
+        </tr>
+        <tr>
+          <td style="padding:10px 0; font-weight:600;">Google Service Account</td>
+          <td style="padding:10px 0; color:#94a3b8;">גאנט Pipeline מ-Google Sheets</td>
+          <td><span class="badge badge-optional">אופציונלי</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>קבלת Anthropic API Key</h3>
+  <ol>
+    <li>כנס ל-console.anthropic.com</li>
+    <li>API Keys → Create Key</li>
+    <li>העתק את המפתח והדבק בטאב ⚙️ הגדרות</li>
+  </ol>
+
+  <h3>קבלת OpenAI API Key (לזיהוי קול)</h3>
+  <ol>
+    <li>כנס ל-platform.openai.com</li>
+    <li>API Keys → Create new secret key</li>
+    <li>הדבק בטאב ⚙️ הגדרות תחת "OpenAI API Key"</li>
+  </ol>
+
+  <!-- 3. Google Sheets -->
+  <h2 id="sheets">3. חיבור Google Sheets (לגאנט)</h2>
+
+  <p>Pipeline מושך נתונים מ-Google Sheets. זה אופציונלי — אם לא מחבר, Pipeline לא יעבוד.</p>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">צור Service Account ב-Google Cloud</div>
+      <ol>
+        <li>כנס ל-console.cloud.google.com</li>
+        <li>IAM &amp; Admin → Service Accounts → Create</li>
+        <li>הורד JSON Key (Actions → Manage Keys → Add Key → JSON)</li>
+        <li>שמור את הקובץ כ-<code>google-service-account.json</code> בתיקיית server</li>
+      </ol>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">הפעל Google Sheets API</div>
+      <ol>
+        <li>APIs &amp; Services → Enable APIs → "Google Sheets API" → Enable</li>
+      </ol>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">שתף את הגאנט עם ה-Service Account</div>
+      <p>פתח את Google Sheets → שתף → הדבק את ה-email של ה-service account (כמו <code>my-sa@project.iam.gserviceaccount.com</code>) → Editor.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <div class="step-title">הגדר מבנה הגאנט</div>
+      <div class="card" style="font-size:12px; overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; direction:ltr; text-align:left;">
+          <thead>
+            <tr style="border-bottom:1px solid #2d2d42; color:#94a3b8;">
+              <th style="padding:6px 10px;">Column</th>
+              <th style="padding:6px 10px;">Field</th>
+              <th style="padding:6px 10px;">Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid #1e1e2e;"><td style="padding:6px 10px; color:#a5b4fc;">A</td><td style="padding:6px 10px;">Date</td><td style="padding:6px 10px; color:#64748b;">15/06/2025</td></tr>
+            <tr style="border-bottom:1px solid #1e1e2e;"><td style="padding:6px 10px; color:#a5b4fc;">B</td><td style="padding:6px 10px;">Platform</td><td style="padding:6px 10px; color:#64748b;">Instagram Reels</td></tr>
+            <tr style="border-bottom:1px solid #1e1e2e;"><td style="padding:6px 10px; color:#a5b4fc;">C</td><td style="padding:6px 10px;">Content Type</td><td style="padding:6px 10px; color:#64748b;">טיפ מקצועי</td></tr>
+            <tr style="border-bottom:1px solid #1e1e2e;"><td style="padding:6px 10px; color:#a5b4fc;">D</td><td style="padding:6px 10px;">Character</td><td style="padding:6px 10px; color:#64748b;">דרור</td></tr>
+            <tr style="border-bottom:1px solid #1e1e2e;"><td style="padding:6px 10px; color:#a5b4fc;">E</td><td style="padding:6px 10px;">Location</td><td style="padding:6px 10px; color:#64748b;">משרד מודרני</td></tr>
+            <tr style="border-bottom:1px solid #1e1e2e;"><td style="padding:6px 10px; color:#a5b4fc;">F</td><td style="padding:6px 10px;">Main Message</td><td style="padding:6px 10px; color:#64748b;">המסר הראשי של הסרטון</td></tr>
+            <tr style="border-bottom:1px solid #1e1e2e;"><td style="padding:6px 10px; color:#a5b4fc;">G</td><td style="padding:6px 10px;">Hook</td><td style="padding:6px 10px; color:#64748b;">משפט הפתיחה</td></tr>
+            <tr style="border-bottom:1px solid #1e1e2e;"><td style="padding:6px 10px; color:#a5b4fc;">H</td><td style="padding:6px 10px;">Description</td><td style="padding:6px 10px; color:#64748b;">2-3 משפטים על התוכן</td></tr>
+            <tr style="border-bottom:1px solid #1e1e2e;"><td style="padding:6px 10px; color:#a5b4fc;">I</td><td style="padding:6px 10px;">Duration (sec)</td><td style="padding:6px 10px; color:#64748b;">30</td></tr>
+            <tr><td style="padding:6px 10px; color:#a5b4fc;">J</td><td style="padding:6px 10px;">Status</td><td style="padding:6px 10px; color:#64748b;">מתוכנן / בעבודה / הושלם</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-body">
+      <div class="step-title">עדכן pipeline-config.json</div>
+      <pre><code>// server/src/data/pipeline-config.json
+{
+  "spreadsheetId": "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms",
+  "sheetName": "גאנט 2025"
+}</code></pre>
+    </div>
+  </div>
+
+  <!-- 4. Tabs -->
+  <h2 id="tabs">4. סקירת הטאבים</h2>
+
+  <div class="tab-grid">
+    <div class="tab-card">
+      <div class="tab-icon">💬</div>
+      <div class="tab-name">צ'אט AI</div>
+      <div class="tab-desc">שוחח עם Claude על ה-Timeline הנוכחי. שאל שאלות, קבל ניתוח, בקש שינויים.</div>
+    </div>
+    <div class="tab-card">
+      <div class="tab-icon">📅</div>
+      <div class="tab-name">Pipeline</div>
+      <div class="tab-desc">שולף גאנט מ-Google Sheets. לחץ "התחל ייצור" — מקבל תסריט מלא + חבילת ייצור + ElevenLabs texts.</div>
+    </div>
+    <div class="tab-card">
+      <div class="tab-icon">🎭</div>
+      <div class="tab-name">דמויות</div>
+      <div class="tab-desc">הגדר פרופיל לכל דמות: טון, אישיות, סגנון דיבור. Claude ישתמש בזה בכל Pipeline.</div>
+    </div>
+    <div class="tab-card">
+      <div class="tab-icon">🎨</div>
+      <div class="tab-name">מותג</div>
+      <div class="tab-desc">הגדרות Brand: צבעים, פונטים, כתוביות, מוזיקה, סגנון עריכה — מוזרק לכל Pipeline.</div>
+    </div>
+    <div class="tab-card">
+      <div class="tab-icon">📈</div>
+      <div class="tab-name">היסטוריה</div>
+      <div class="tab-desc">רשימת כל הסרטונים שנוצרו. הכנס מדדי ביצוע — Claude ילמד מהטובים.</div>
+    </div>
+    <div class="tab-card">
+      <div class="tab-icon">✏️</div>
+      <div class="tab-name">כתוביות</div>
+      <div class="tab-desc">עורך כתוביות עברית חכם. זיהוי קול (Whisper), שבירה חכמה, ייצוא SRT.</div>
+    </div>
+    <div class="tab-card">
+      <div class="tab-icon">📊</div>
+      <div class="tab-name">ניתוח</div>
+      <div class="tab-desc">ניתוח מעמיק של ה-Timeline: קצב חיתוכים, מבנה, המלצות לשיפור.</div>
+    </div>
+    <div class="tab-card">
+      <div class="tab-icon">🔍</div>
+      <div class="tab-name">מחקר</div>
+      <div class="tab-desc">מחקר טרנדים ותוכן לפי פלטפורמה ונישה. קבל רעיונות ואסטרטגיה.</div>
+    </div>
+    <div class="tab-card">
+      <div class="tab-icon">👤</div>
+      <div class="tab-name">פרופיל סגנון</div>
+      <div class="tab-desc">פרופיל סגנון אישי מבוסס על הסרטונים שלך.</div>
+    </div>
+    <div class="tab-card">
+      <div class="tab-icon">⚙️</div>
+      <div class="tab-name">הגדרות</div>
+      <div class="tab-desc">API keys, נתיב Google Sheets, תיקיית ייצוא. נשמר מקומית.</div>
+    </div>
+  </div>
+
+  <!-- 5. Workflow -->
+  <h2 id="workflow">5. זרימת עבודה — מגאנט לסרטון</h2>
+
+  <div class="workflow">
+    <div class="wf-step">
+      <div class="wf-icon">📊</div>
+      <div class="wf-text">
+        <div class="wf-title">Google Sheets — גאנט <span class="auto-badge">אוטומטי</span></div>
+        <div class="wf-sub">הכנס שורה עם תאריך, דמות, הוק, מסר, פלטפורמה, סטטוס "מתוכנן"</div>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-icon">📅</div>
+      <div class="wf-text">
+        <div class="wf-title">Pipeline → "התחל ייצור" <span class="auto-badge">אוטומטי</span></div>
+        <div class="wf-sub">Claude כותב תסריט ויראלי עברית + פירוק סצנות + B-roll + SFX + מוזיקה</div>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-icon">🔊</div>
+      <div class="wf-text">
+        <div class="wf-title">ElevenLabs — הקלטת קול <span class="manual-badge">ידני</span></div>
+        <div class="wf-sub">העתק טקסט כל סצנה מטאב "ElevenLabs" → הדבק ב-ElevenLabs → הורד MP3</div>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-icon">🖼️</div>
+      <div class="wf-text">
+        <div class="wf-title">יצירת תמונות דמות <span class="manual-badge">ידני</span></div>
+        <div class="wf-sub">העתק פרומפט מטאב "פרומפטים" → הכנס למודל הדמות שלך (GPT/Midjourney)</div>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-icon">📁</div>
+      <div class="wf-text">
+        <div class="wf-title">הורד B-roll + SFX <span class="manual-badge">ידני</span></div>
+        <div class="wf-sub">לפי רשימת B-roll+SFX בפאנל. קבצים נשמרים בתיקיית הפרויקט</div>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-icon">🎬</div>
+      <div class="wf-text">
+        <div class="wf-title">עריכה ב-Premiere <span class="manual-badge">ידני</span></div>
+        <div class="wf-sub">עריכה ראשונית → מוזיקה (לפי המלצה) → SFX → B-roll → מעברים</div>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-icon">✏️</div>
+      <div class="wf-text">
+        <div class="wf-title">כתוביות בעברית <span class="auto-badge">אוטומטי</span></div>
+        <div class="wf-sub">הכנס קובץ אודיו לטאב כתוביות → Whisper מזהה → הגדר שבירה → ייצא SRT</div>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-icon">✅</div>
+      <div class="wf-text">
+        <div class="wf-title">סיום וסימון <span class="auto-badge">אוטומטי</span></div>
+        <div class="wf-sub">לחץ "✓ סמן הושלם" ב-Pipeline → עדכון אוטומטי ב-Sheets</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Captions -->
+  <h2 id="captions">6. עבודה עם כתוביות</h2>
+
+  <h3>זיהוי דיבור אוטומטי (Whisper)</h3>
+  <ol>
+    <li>ייצא אודיו מ-Premiere (או השתמש ב-MP3 מ-ElevenLabs)</li>
+    <li>בטאב ✏️ כתוביות → לחץ <strong>"🎙️ זהה קול"</strong></li>
+    <li>בחר קובץ (mp3 / wav / mp4 / m4a)</li>
+    <li>הטקסט ימולא אוטומטית</li>
+  </ol>
+  <div class="warning">
+    ⚠ נדרש OpenAI API Key בטאב ⚙️ הגדרות. עלות: כ-$0.006 לדקה.
+  </div>
+
+  <h3>עיצוב כתוביות עברית</h3>
+  <ul>
+    <li><strong>מילים בשורה</strong> — 2-5. מומלץ 3 לרילס, 4 ליוטיוב</li>
+    <li><strong>עברית חכמה</strong> — לא שובר אחרי מילות חיבור (של, עם, את, כי...)</li>
+    <li><strong>פיסוק</strong> — "הסר" לכתוביות נקיות, "שמור" לכתוביות עם ניקוד</li>
+    <li><strong>מ/שנ</strong> — מהירות הדיבור (ברירת מחדל 2.5). עדכן לפי הדמות</li>
+    <li><strong>התחלה</strong> — עיכוב בשניות לפני הכתובית הראשונה</li>
+  </ul>
+
+  <h3>ייצוא</h3>
+  <ul>
+    <li><strong>העתק SRT</strong> — מוכן לייבוא ל-Premiere (File → Import → .srt)</li>
+    <li><strong>העתק טקסט</strong> — טקסט נקי לשימוש חיצוני</li>
+  </ul>
+
+  <!-- 7. Characters -->
+  <h2 id="characters">7. ניהול דמויות</h2>
+
+  <p>הטאב 🎭 מאפשר לשמור פרופיל לכל דמות. Claude מקבל את הפרופיל בכל Pipeline ומתאים את התסריט.</p>
+
+  <h3>שדות פרופיל דמות</h3>
+  <ul>
+    <li><strong>ID</strong> — חייב להתאים בדיוק לשם בעמודה D של הגאנט (עברית)</li>
+    <li><strong>תיאור ויזואלי</strong> — תיאור באנגלית לפרומפטים לתמונות (גיל, לבוש, מיקום...)</li>
+    <li><strong>טון דיבור</strong> — "ישיר, חם, מקצועי, עם הומור קל"</li>
+    <li><strong>אישיות</strong> — רקע ומי הדמות</li>
+    <li><strong>סגנון דיבור</strong> — משפטים אופייניים, ביטויים שהדמות משתמשת בהם</li>
+    <li><strong>סוגי תוכן</strong> — "טיפ מקצועי, סיפור אישי, ריאקציה" (מופרד בפסיקים)</li>
+  </ul>
+
+  <h3>Brain Editor (בטאב Pipeline → Knowledge → Brain)</h3>
+  <p>ערוך ישירות את הוראות הכתיבה של Claude — ה-"brain" שמנחה את כל התסריטים. שמור ← נכנס לתוקף מיד.</p>
+
+  <!-- 8. Tips -->
+  <h2 id="tips">8. טיפים וטריקים</h2>
+
+  <div class="card">
+    <h3 style="margin-top:0; color:#e2e8f0;">🏆 Pipeline — לתוצאות טובות יותר</h3>
+    <ul>
+      <li>כתוב הוק ספציפי בגאנט (לא "הוק טוב" — אלא "האם ידעת ש...")</li>
+      <li>הגדר דמות עם פרופיל מלא לפני הרצה</li>
+      <li>עדכן ביצועים בהיסטוריה — Claude ילמד מה עבד</li>
+      <li>ערוך את ה-Brain בטאב Knowledge לפי השפה והסגנון שלך</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0; color:#e2e8f0;">✏️ כתוביות — טיפים</h3>
+    <ul>
+      <li>לרילס קצר (30 שנ) — 3 מילים בשורה, 2.8 מ/שנ</li>
+      <li>לסרטון ארוך (3+ דקות) — 4-5 מילים בשורה, 2.2 מ/שנ</li>
+      <li>תמיד בדוק את הקובץ SRT ב-VLC לפני ייבוא ל-Premiere</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0; color:#e2e8f0;">⚡ קיצורי דרך</h3>
+    <ul>
+      <li>LED ירוק = שרת מחובר, LED אפור = שרת לא רץ</li>
+      <li>כל שמירה ב-Brain מנקה cache אוטומטית — אין צורך לאתחל שרת</li>
+      <li>הגדרות מה-UI גוברות על .env (שימושי לבדיקות)</li>
+      <li>קבצי JSON (דמויות, מותג, היסטוריה) ניתנים לעריכה ידנית ב-<code>server/src/data/</code></li>
+    </ul>
+  </div>
+
+  <hr>
+
+  <div style="text-align:center; color:#475569; font-size:12px; padding: 20px 0 40px;">
+    <p>Premiere AI Studio | נבנה עם Claude (Anthropic) + Whisper (OpenAI)</p>
+    <p style="margin-top:4px;">לשאלות ועזרה — בדוק את README.md בתיקיית הפרויקט</p>
+  </div>
+
+</div>
+</body>
+</html>

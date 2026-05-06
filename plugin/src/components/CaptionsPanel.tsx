@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { api } from '../services/api';
 
 type PunctuationMode = 'remove' | 'keep' | 'auto';
@@ -36,6 +36,9 @@ export default function CaptionsPanel() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [transcribing, setTranscribing] = useState(false);
+  const [transcribeError, setTranscribeError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const format = useCallback(async () => {
     if (!text.trim()) return;
@@ -57,6 +60,19 @@ export default function CaptionsPanel() {
       setLoading(false);
     }
   }, [text, wordsPerLine, maxChars, punctuation, smartHebrew, wps, startOffset]);
+
+  const transcribe = useCallback(async (file: File) => {
+    setTranscribing(true);
+    setTranscribeError('');
+    try {
+      const result = await api.captionsTranscribe(file);
+      setText(result.text);
+    } catch (err) {
+      setTranscribeError(err instanceof Error ? err.message : 'שגיאה בזיהוי קול');
+    } finally {
+      setTranscribing(false);
+    }
+  }, []);
 
   function copy(content: string, key: string) {
     navigator.clipboard.writeText(content).then(() => {
@@ -85,6 +101,39 @@ export default function CaptionsPanel() {
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+
+      {/* Transcription */}
+      <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', flexShrink: 0, background: 'var(--bg-secondary)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".mp3,.wav,.mp4,.m4a,.webm,.ogg"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) transcribe(f);
+              e.target.value = '';
+            }}
+          />
+          <button
+            className="btn-ghost"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={transcribing}
+            style={{ fontSize: 11, flex: 1 }}
+          >
+            {transcribing ? '⏳ מזהה דיבור...' : '🎙️ זהה קול (Whisper)'}
+          </button>
+          <span style={{ fontSize: 9, color: 'var(--text-muted)', direction: 'rtl' }}>
+            mp3 / wav / mp4 / m4a
+          </span>
+        </div>
+        {transcribeError && (
+          <div style={{ marginTop: 5, fontSize: 10, color: '#ef4444', direction: 'rtl' }}>
+            ⚠ {transcribeError}
+          </div>
+        )}
+      </div>
 
       {/* Input */}
       <div style={{ padding: 10, borderBottom: '1px solid var(--border)', flexShrink: 0 }}>

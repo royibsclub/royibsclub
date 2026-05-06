@@ -245,4 +245,40 @@ export const api = {
       srt: string;
       stats: { totalLines: number; totalWords: number; estimatedDuration: number };
     }>('/captions/format', body),
+
+  captionsTranscribe: async (file: File): Promise<{ text: string }> => {
+    const formData = new FormData();
+    formData.append('audio', file);
+    const res = await fetch(`${BASE_URL}/captions/transcribe`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error((err as { error: string }).error || res.statusText);
+    }
+    return res.json() as Promise<{ text: string }>;
+  },
+
+  // ── Settings ──────────────────────────────────────────────────────────────
+
+  settingsStatus: () =>
+    get<{
+      anthropic: { configured: boolean; source: string; preview: string };
+      openai: { configured: boolean; source: string; preview: string };
+      sheets: { configured: boolean; path: string };
+      outputDir: { configured: boolean; path: string };
+    }>('/settings/status'),
+
+  settingsSave: (body: {
+    anthropicApiKey?: string;
+    openaiApiKey?: string;
+    googleServiceAccountPath?: string;
+    videosOutputDir?: string;
+  }) =>
+    fetch(`${BASE_URL}/settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then((r) => r.json() as Promise<{ ok: boolean }>),
 };

@@ -8,10 +8,11 @@ import CharactersPanel from './components/CharactersPanel';
 import BrandPanel from './components/BrandPanel';
 import HistoryPanel from './components/HistoryPanel';
 import CaptionsPanel from './components/CaptionsPanel';
+import SettingsPanel from './components/SettingsPanel';
 import { pushTimelineState, startActionPolling } from './services/premiereService';
 import type { TimelineState, Platform, StyleProfile } from '@premiere-ai/shared';
 
-type Tab = 'chat' | 'pipeline' | 'characters' | 'brand' | 'history' | 'captions' | 'analysis' | 'research' | 'profile';
+type Tab = 'chat' | 'pipeline' | 'characters' | 'brand' | 'history' | 'captions' | 'analysis' | 'research' | 'profile' | 'settings';
 
 const DEFAULT_CREATOR_ID = 'default';
 
@@ -57,6 +58,7 @@ export default function App() {
     { id: 'analysis', label: '📊' },
     { id: 'research', label: '🔍' },
     { id: 'profile', label: '👤' },
+    { id: 'settings', label: '⚙️' },
   ];
 
   return (
@@ -136,6 +138,7 @@ export default function App() {
             onProfileLoaded={(p) => setProfile(p)}
           />
         )}
+        {tab === 'settings' && <SettingsPanel />}
       </div>
 
       {/* Footer: timeline info */}
