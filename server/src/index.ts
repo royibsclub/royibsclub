@@ -6,6 +6,8 @@ import { chatRouter } from './routes/chat';
 import { executeRouter } from './routes/execute';
 import { profileRouter } from './routes/profile';
 import { researchRouter } from './routes/research';
+import { pipelineRouter } from './routes/pipeline';
+import { knowledgeRouter } from './routes/knowledge';
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3333;
@@ -18,6 +20,8 @@ app.use('/chat', chatRouter);
 app.use('/execute', executeRouter);
 app.use('/profile', profileRouter);
 app.use('/research', researchRouter);
+app.use('/pipeline', pipelineRouter);
+app.use('/knowledge', knowledgeRouter);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() });

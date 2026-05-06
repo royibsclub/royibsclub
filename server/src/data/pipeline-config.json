@@ -1,0 +1,23 @@
+{
+  "spreadsheetId": "YOUR_SPREADSHEET_ID_HERE",
+  "sheetName": "גאנט 2025",
+  "headerRow": 1,
+  "dataStartRow": 2,
+  "columns": {
+    "date": "A",
+    "platform": "B",
+    "contentType": "C",
+    "character": "D",
+    "location": "E",
+    "message": "F",
+    "hook": "G",
+    "description": "H",
+    "duration": "I",
+    "status": "J"
+  },
+  "statusValues": {
+    "planned": "מתוכנן",
+    "inProgress": "בעבודה",
+    "done": "הושלם"
+  }
+}

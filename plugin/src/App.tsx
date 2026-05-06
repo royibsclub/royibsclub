@@ -3,10 +3,11 @@ import ChatPanel from './components/ChatPanel';
 import AnalysisPanel from './components/AnalysisPanel';
 import StyleProfilePanel from './components/StyleProfile';
 import ResearchPanel from './components/ResearchPanel';
+import PipelinePanel from './components/PipelinePanel';
 import { pushTimelineState, startActionPolling } from './services/premiereService';
 import type { TimelineState, Platform, StyleProfile } from '@premiere-ai/shared';
 
-type Tab = 'chat' | 'analysis' | 'research' | 'profile';
+type Tab = 'chat' | 'analysis' | 'pipeline' | 'research' | 'profile';
 
 const DEFAULT_CREATOR_ID = 'default';
 
@@ -44,6 +45,7 @@ export default function App() {
 
   const TABS: { id: Tab; label: string }[] = [
     { id: 'chat', label: 'צ\'אט' },
+    { id: 'pipeline', label: 'Pipeline' },
     { id: 'analysis', label: 'ניתוח' },
     { id: 'research', label: 'מחקר' },
     { id: 'profile', label: 'פרופיל' },
@@ -111,6 +113,9 @@ export default function App() {
         )}
         {tab === 'analysis' && (
           <AnalysisPanel timeline={timeline} platform={platform} creatorId={DEFAULT_CREATOR_ID} />
+        )}
+        {tab === 'pipeline' && (
+          <PipelinePanel />
         )}
         {tab === 'research' && (
           <ResearchPanel platform={platform} />

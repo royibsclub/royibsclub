@@ -266,3 +266,93 @@ export interface SSEEvent {
   type: 'action_request' | 'timeline_update' | 'analysis_progress';
   payload: unknown;
 }
+
+// ─── Studio Pipeline ─────────────────────────────────────────────────────────
+
+export interface GanttRow {
+  rowIndex: number;
+  date: string;
+  platform: Platform;
+  contentType: string;
+  character: string;
+  location: string;
+  message: string;
+  hook: string;
+  description: string;
+  durationSeconds: number;
+  status: 'מתוכנן' | 'בעבודה' | 'הושלם';
+}
+
+export interface ScriptScene {
+  sceneNumber: number;
+  sceneType: 'hook' | 'body' | 'cta';
+  hebrewText: string;          // הטקסט הנאמר
+  elevenlabsText: string;      // גרסה מסומנת ל-TTS
+  durationSeconds: number;     // משך משוער
+}
+
+export interface BrollItem {
+  word: string;                // המילה/משפט שעליו יושב ה-B-roll
+  description: string;        // מה צריך לראות
+  searchTerms: string[];
+  durationSeconds: number;
+}
+
+export interface SfxItem {
+  word: string;               // המילה/משפט שעליו יושב ה-SFX
+  soundName: string;          // שם הסאונד
+  category: 'transition' | 'impact' | 'ambient' | 'comedic';
+  timingNote: string;         // "על המילה" / "לפני" / "אחרי"
+}
+
+export interface MusicRecommendation {
+  style: string;
+  bpm: number;
+  mood: string;
+  exampleTrack?: string;
+  viralNote: string;          // למה זה עובד לפלטפורמה הזו
+}
+
+export interface SceneBreakdown {
+  sceneNumber: number;
+  characterPrompt: string;    // פרומפט לתמונת דמות
+  broll: BrollItem[];
+  sfx: SfxItem[];
+  music: MusicRecommendation;
+  aiModelNote: string;        // המלצה על מודל ליצירה
+}
+
+export interface ProductionPackage {
+  id: string;
+  ganttRow: GanttRow;
+  script: ScriptScene[];
+  breakdown: SceneBreakdown[];
+  projectFolder: string;
+  checklistPath: string;
+  createdAt: number;
+}
+
+export type PipelineStep =
+  | 'fetching_gantt'
+  | 'generating_script'
+  | 'generating_breakdown'
+  | 'organizing_files'
+  | 'updating_sheets'
+  | 'done'
+  | 'error';
+
+export interface PipelineProgress {
+  step: PipelineStep;
+  message: string;
+  packageId?: string;
+}
+
+// ─── Knowledge Base ───────────────────────────────────────────────────────────
+
+export interface KnowledgeFile {
+  name: string;
+  originalName: string;
+  uploadedAt: number;
+  sizeBytes: number;
+  category: 'brand' | 'script_examples' | 'audience' | 'guidelines' | 'other';
+}
