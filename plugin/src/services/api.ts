@@ -228,4 +228,21 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ performance, notes, status }),
     }).then((r) => r.json() as Promise<{ record: VideoRecord }>),
+
+  // ── Captions ──────────────────────────────────────────────────────────────
+
+  captionsFormat: (body: {
+    text: string;
+    wordsPerLine?: number;
+    maxCharsPerLine?: number;
+    punctuationMode?: 'remove' | 'keep' | 'auto';
+    smartHebrew?: boolean;
+    wordsPerSecond?: number;
+    startOffset?: number;
+  }) =>
+    post<{
+      lines: Array<{ index: number; text: string; startTime: number; endTime: number }>;
+      srt: string;
+      stats: { totalLines: number; totalWords: number; estimatedDuration: number };
+    }>('/captions/format', body),
 };

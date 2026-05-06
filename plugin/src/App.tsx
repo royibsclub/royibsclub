@@ -7,10 +7,11 @@ import PipelinePanel from './components/PipelinePanel';
 import CharactersPanel from './components/CharactersPanel';
 import BrandPanel from './components/BrandPanel';
 import HistoryPanel from './components/HistoryPanel';
+import CaptionsPanel from './components/CaptionsPanel';
 import { pushTimelineState, startActionPolling } from './services/premiereService';
 import type { TimelineState, Platform, StyleProfile } from '@premiere-ai/shared';
 
-type Tab = 'chat' | 'pipeline' | 'characters' | 'brand' | 'history' | 'analysis' | 'research' | 'profile';
+type Tab = 'chat' | 'pipeline' | 'characters' | 'brand' | 'history' | 'captions' | 'analysis' | 'research' | 'profile';
 
 const DEFAULT_CREATOR_ID = 'default';
 
@@ -52,6 +53,7 @@ export default function App() {
     { id: 'characters', label: '🎭' },
     { id: 'brand', label: '🎨' },
     { id: 'history', label: '📈' },
+    { id: 'captions', label: '✏️' },
     { id: 'analysis', label: '📊' },
     { id: 'research', label: '🔍' },
     { id: 'profile', label: '👤' },
@@ -124,6 +126,7 @@ export default function App() {
         {tab === 'characters' && <CharactersPanel />}
         {tab === 'brand' && <BrandPanel />}
         {tab === 'history' && <HistoryPanel />}
+        {tab === 'captions' && <CaptionsPanel />}
         {tab === 'research' && (
           <ResearchPanel platform={platform} />
         )}

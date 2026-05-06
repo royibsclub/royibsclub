@@ -11,6 +11,7 @@ import { knowledgeRouter } from './routes/knowledge';
 import { charactersRouter } from './routes/characters';
 import { brandRouter } from './routes/brand';
 import { historyRouter } from './routes/history';
+import { captionsRouter } from './routes/captions';
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3333;
@@ -28,6 +29,7 @@ app.use('/knowledge', knowledgeRouter);
 app.use('/characters', charactersRouter);
 app.use('/brand', brandRouter);
 app.use('/history', historyRouter);
+app.use('/captions', captionsRouter);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() });
