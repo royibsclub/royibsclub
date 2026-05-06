@@ -1,0 +1,15 @@
+{
+  "name": "premiere-ai-editor",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "shared",
+    "server",
+    "plugin"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=server",
+    "build": "npm run build --workspace=shared && npm run build --workspace=server && npm run build --workspace=plugin",
+    "install:all": "npm install"
+  }
+}

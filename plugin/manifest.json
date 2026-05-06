@@ -1,0 +1,33 @@
+{
+  "id": "com.royibsclub.premiere-ai-editor",
+  "name": "Premiere AI Editor",
+  "version": "1.0.0",
+  "manifestVersion": 7,
+  "host": [
+    {
+      "app": "PPRO",
+      "minVersion": "25.6.0"
+    }
+  ],
+  "entrypoints": [
+    {
+      "type": "panel",
+      "id": "mainPanel",
+      "label": { "default": "AI Editor" },
+      "minimumSize": { "width": 320, "height": 480 },
+      "preferredDockedSize": { "width": 380, "height": 700 },
+      "main": "index.html"
+    }
+  ],
+  "requiredPermissions": {
+    "localFileSystem": "request",
+    "network": {
+      "domains": [
+        "http://localhost:3333",
+        "https://api.anthropic.com"
+      ]
+    },
+    "clipboard": "readwrite",
+    "allowCodeGenerationFromStrings": true
+  }
+}
