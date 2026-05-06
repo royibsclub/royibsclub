@@ -4,10 +4,13 @@ import AnalysisPanel from './components/AnalysisPanel';
 import StyleProfilePanel from './components/StyleProfile';
 import ResearchPanel from './components/ResearchPanel';
 import PipelinePanel from './components/PipelinePanel';
+import CharactersPanel from './components/CharactersPanel';
+import BrandPanel from './components/BrandPanel';
+import HistoryPanel from './components/HistoryPanel';
 import { pushTimelineState, startActionPolling } from './services/premiereService';
 import type { TimelineState, Platform, StyleProfile } from '@premiere-ai/shared';
 
-type Tab = 'chat' | 'analysis' | 'pipeline' | 'research' | 'profile';
+type Tab = 'chat' | 'pipeline' | 'characters' | 'brand' | 'history' | 'analysis' | 'research' | 'profile';
 
 const DEFAULT_CREATOR_ID = 'default';
 
@@ -44,11 +47,14 @@ export default function App() {
   }, []);
 
   const TABS: { id: Tab; label: string }[] = [
-    { id: 'chat', label: 'צ\'אט' },
-    { id: 'pipeline', label: 'Pipeline' },
-    { id: 'analysis', label: 'ניתוח' },
-    { id: 'research', label: 'מחקר' },
-    { id: 'profile', label: 'פרופיל' },
+    { id: 'chat', label: '💬' },
+    { id: 'pipeline', label: '📅' },
+    { id: 'characters', label: '🎭' },
+    { id: 'brand', label: '🎨' },
+    { id: 'history', label: '📈' },
+    { id: 'analysis', label: '📊' },
+    { id: 'research', label: '🔍' },
+    { id: 'profile', label: '👤' },
   ];
 
   return (
@@ -114,9 +120,10 @@ export default function App() {
         {tab === 'analysis' && (
           <AnalysisPanel timeline={timeline} platform={platform} creatorId={DEFAULT_CREATOR_ID} />
         )}
-        {tab === 'pipeline' && (
-          <PipelinePanel />
-        )}
+        {tab === 'pipeline' && <PipelinePanel />}
+        {tab === 'characters' && <CharactersPanel />}
+        {tab === 'brand' && <BrandPanel />}
+        {tab === 'history' && <HistoryPanel />}
         {tab === 'research' && (
           <ResearchPanel platform={platform} />
         )}

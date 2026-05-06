@@ -30,6 +30,10 @@ import type {
   ProductionPackage,
   PipelineProgress,
   KnowledgeFile,
+  Character,
+  BrandSettings,
+  VideoRecord,
+  VideoPerformance,
 } from '@premiere-ai/shared';
 
 export const api = {
@@ -176,4 +180,52 @@ export const api = {
 
   knowledgeBrainSave: (content: string) =>
     post<{ ok: boolean }>('/knowledge/brain', { content }),
+
+  // ── Characters ────────────────────────────────────────────────────────────
+
+  charactersList: () =>
+    get<{ characters: Character[] }>('/characters/list'),
+
+  characterSave: (character: Omit<Character, 'createdAt' | 'updatedAt'>) =>
+    post<{ character: Character }>('/characters', character),
+
+  characterUpdate: (id: string, data: Partial<Character>) =>
+    fetch(`${BASE_URL}/characters/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }).then((r) => r.json() as Promise<{ character: Character }>),
+
+  characterDelete: (id: string) =>
+    fetch(`${BASE_URL}/characters/${encodeURIComponent(id)}`, { method: 'DELETE' })
+      .then((r) => r.json() as Promise<{ ok: boolean }>),
+
+  // ── Brand ─────────────────────────────────────────────────────────────────
+
+  brandGet: () =>
+    get<{ brand: BrandSettings }>('/brand'),
+
+  brandSave: (brand: Omit<BrandSettings, 'updatedAt'>) =>
+    fetch(`${BASE_URL}/brand`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(brand),
+    }).then((r) => r.json() as Promise<{ brand: BrandSettings }>),
+
+  // ── History ───────────────────────────────────────────────────────────────
+
+  historyList: () =>
+    get<{ records: VideoRecord[] }>('/history/list'),
+
+  historyUpdatePerformance: (
+    id: string,
+    performance: Omit<VideoPerformance, 'recordedAt'>,
+    notes?: string,
+    status?: VideoRecord['status']
+  ) =>
+    fetch(`${BASE_URL}/history/${id}/performance`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ performance, notes, status }),
+    }).then((r) => r.json() as Promise<{ record: VideoRecord }>),
 };

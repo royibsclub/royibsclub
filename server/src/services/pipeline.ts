@@ -12,6 +12,9 @@ import type {
 import { loadAllKnowledge } from './knowledgeBase';
 import { createProjectFolder, writeScriptFiles, writeChecklist, savePackageMeta } from './fileOrganizer';
 import { updateRowStatus } from './googleSheets';
+import { getCharacter, formatCharacterBlock } from './characters';
+import { getBrandSettings, formatBrandBlock } from './brand';
+import { addRecord, formatHistoryBlock } from './videoHistory';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const MODEL = 'claude-sonnet-4-6';
@@ -42,13 +45,20 @@ function getVideoBrain(): string {
   return videoBrainCache;
 }
 
-function buildSystemPrompt(): string {
+function buildSystemPrompt(row: GanttRow): string {
+  const character = getCharacter(row.character);
+  const brand = getBrandSettings();
+  const historyBlock = formatHistoryBlock(row.character);
   const userKnowledge = loadAllKnowledge();
+
   return [
     getVideoBrain(),
     getPipelineBrain(),
+    character ? formatCharacterBlock(character) : '',
+    formatBrandBlock(brand),
+    historyBlock,
     userKnowledge || '',
-  ].join('\n\n---\n\n');
+  ].filter(Boolean).join('\n\n---\n\n');
 }
 
 function buildScriptPrompt(row: GanttRow): string {
@@ -108,7 +118,7 @@ export async function runPipeline(
   row: GanttRow,
   onProgress: (p: PipelineProgress) => void
 ): Promise<ProductionPackage> {
-  const systemPrompt = buildSystemPrompt();
+  const systemPrompt = buildSystemPrompt(row);
 
   // ── Step 1: Generate Script ──────────────────────────────────────────────
   onProgress({ step: 'generating_script', message: 'Claude כותב תסריט ויראלי...' });
@@ -183,6 +193,7 @@ export async function runPipeline(
   };
 
   savePackageMeta(pkg);
+  addRecord(pkg);
 
   onProgress({ step: 'done', message: 'חבילת הייצור מוכנה!', packageId: pkg.id });
   return pkg;

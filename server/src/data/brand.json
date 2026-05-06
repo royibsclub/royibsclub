@@ -1,0 +1,9 @@
+{
+  "colors": { "primary": "", "secondary": "", "accent": "", "textOnDark": "" },
+  "fonts": { "title": "", "body": "", "captions": "" },
+  "captions": { "preset": "Sunday", "style": "", "animationType": "word-by-word" },
+  "music": { "genres": [], "bpmRange": { "min": 100, "max": 140 }, "viralNotes": "" },
+  "editing": { "cutStyle": "", "transitionTypes": [], "pacing": "", "rules": "" },
+  "logo": { "position": "bottom-right", "opacity": 0.8, "notes": "" },
+  "updatedAt": 0
+}

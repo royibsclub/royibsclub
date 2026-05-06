@@ -8,6 +8,9 @@ import { profileRouter } from './routes/profile';
 import { researchRouter } from './routes/research';
 import { pipelineRouter } from './routes/pipeline';
 import { knowledgeRouter } from './routes/knowledge';
+import { charactersRouter } from './routes/characters';
+import { brandRouter } from './routes/brand';
+import { historyRouter } from './routes/history';
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3333;
@@ -22,6 +25,9 @@ app.use('/profile', profileRouter);
 app.use('/research', researchRouter);
 app.use('/pipeline', pipelineRouter);
 app.use('/knowledge', knowledgeRouter);
+app.use('/characters', charactersRouter);
+app.use('/brand', brandRouter);
+app.use('/history', historyRouter);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() });

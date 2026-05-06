@@ -356,3 +356,85 @@ export interface KnowledgeFile {
   sizeBytes: number;
   category: 'brand' | 'script_examples' | 'audience' | 'guidelines' | 'other';
 }
+
+// ─── Characters ───────────────────────────────────────────────────────────────
+
+export interface Character {
+  id: string;                  // חייב להתאים בדיוק לשם בגאנט
+  displayName: string;
+  visualDescription: string;  // תיאור ויזואלי מלא לפרומפטים (אנגלית)
+  referenceImages: string[];  // URLs לתמונות מאושרות
+  voiceTone: string;           // "ישיר, חם, מקצועי..."
+  personality: string;         // מי הדמות — רקע, ערכים
+  speakingStyle: string;       // סגנון דיבור + דוגמת משפטים
+  contentTypes: string[];      // ["טיפ מקצועי", "סיפור אישי"]
+  cameraStyle: string;         // שוטים, תאורה, זווית
+  editingStyle: string;        // קצב עריכה, סגנון מעברים
+  platform: string;
+  notes: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+// ─── Brand Settings ───────────────────────────────────────────────────────────
+
+export interface BrandSettings {
+  colors: {
+    primary: string;
+    secondary: string;
+    accent: string;
+    textOnDark: string;
+  };
+  fonts: {
+    title: string;
+    body: string;
+    captions: string;
+  };
+  captions: {
+    preset: string;        // "Sunday"
+    style: string;
+    animationType: string;
+  };
+  music: {
+    genres: string[];
+    bpmRange: { min: number; max: number };
+    viralNotes: string;
+  };
+  editing: {
+    cutStyle: string;
+    transitionTypes: string[];
+    pacing: string;
+    rules: string;
+  };
+  logo: {
+    position: string;
+    opacity: number;
+    notes: string;
+  };
+  updatedAt: number;
+}
+
+// ─── Video History ────────────────────────────────────────────────────────────
+
+export interface VideoPerformance {
+  views: number;
+  likes: number;
+  comments: number;
+  saves: number;
+  recordedAt: number;
+}
+
+export interface VideoRecord {
+  id: string;                   // = ProductionPackage.id
+  character: string;
+  contentType: string;
+  platform: string;
+  date: string;
+  hookText: string;
+  scriptSummary: string;        // 200 תווים ראשונים
+  projectFolder: string;
+  performance: VideoPerformance | null;
+  notes: string;
+  createdAt: number;
+  status: 'produced' | 'published' | 'archived';
+}
