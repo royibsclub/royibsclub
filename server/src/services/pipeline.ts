@@ -22,6 +22,12 @@ const VIDEO_BRAIN_PATH = path.join(__dirname, '../data/brain.md');
 let pipelineBrainCache: string | null = null;
 let videoBrainCache: string | null = null;
 
+export const PIPELINE_BRAIN_PATH_EXPORT = PIPELINE_BRAIN_PATH;
+
+export function clearBrainCache(): void {
+  pipelineBrainCache = null;
+}
+
 function getPipelineBrain(): string {
   if (!pipelineBrainCache) {
     pipelineBrainCache = fs.readFileSync(PIPELINE_BRAIN_PATH, 'utf-8');

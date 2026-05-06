@@ -170,4 +170,10 @@ export const api = {
   knowledgeDelete: (name: string) =>
     fetch(`${BASE_URL}/knowledge/delete/${encodeURIComponent(name)}`, { method: 'DELETE' })
       .then((r) => r.json() as Promise<{ ok: boolean }>),
+
+  knowledgeBrainGet: () =>
+    get<{ content: string }>('/knowledge/brain'),
+
+  knowledgeBrainSave: (content: string) =>
+    post<{ ok: boolean }>('/knowledge/brain', { content }),
 };

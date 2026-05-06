@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import multer from 'multer';
+import fs from 'fs';
 import { listKnowledgeFiles, saveKnowledgeFile, deleteKnowledgeFile } from '../services/knowledgeBase';
+import { clearBrainCache, PIPELINE_BRAIN_PATH_EXPORT } from '../services/pipeline';
 import type { KnowledgeFile } from '@premiere-ai/shared';
 
 export const knowledgeRouter = Router();
@@ -51,4 +53,30 @@ knowledgeRouter.delete('/delete/:name', (req: Request, res: Response) => {
     return;
   }
   res.json({ ok: true });
+});
+
+// GET /knowledge/brain — קריאת תוכן pipeline-brain.md
+knowledgeRouter.get('/brain', (_req: Request, res: Response) => {
+  try {
+    const content = fs.readFileSync(PIPELINE_BRAIN_PATH_EXPORT, 'utf-8');
+    res.json({ content });
+  } catch {
+    res.status(500).json({ error: 'לא ניתן לקרוא את קובץ ה-Brain' });
+  }
+});
+
+// PUT /knowledge/brain — עדכון תוכן pipeline-brain.md
+knowledgeRouter.put('/brain', (req: Request, res: Response) => {
+  const { content } = req.body as { content?: string };
+  if (typeof content !== 'string') {
+    res.status(400).json({ error: 'content נדרש' });
+    return;
+  }
+  try {
+    fs.writeFileSync(PIPELINE_BRAIN_PATH_EXPORT, content, 'utf-8');
+    clearBrainCache();
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: 'לא ניתן לשמור את קובץ ה-Brain' });
+  }
 });

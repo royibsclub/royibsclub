@@ -531,6 +531,113 @@ function ChecklistTab({ pkg }: { pkg: ProductionPackage }) {
 // ── Knowledge Screen ──────────────────────────────────────────────────────────
 
 function KnowledgeScreen() {
+  const [subTab, setSubTab] = useState<'brain' | 'files'>('brain');
+
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* Sub-tabs */}
+      <div style={{ display: 'flex', background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+        {([['brain', '🧠 Brain'], ['files', '📎 קבצים']] as const).map(([id, label]) => (
+          <button
+            key={id}
+            onClick={() => setSubTab(id)}
+            style={{
+              flex: 1,
+              background: 'transparent',
+              color: subTab === id ? 'var(--accent)' : 'var(--text-muted)',
+              borderBottom: subTab === id ? '2px solid var(--accent)' : '2px solid transparent',
+              padding: '7px 4px',
+              fontSize: 11,
+              fontWeight: 600,
+              borderRadius: 0,
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {subTab === 'brain' ? <BrainEditor /> : <KnowledgeFiles />}
+    </div>
+  );
+}
+
+// ── Brain Editor ──────────────────────────────────────────────────────────────
+
+function BrainEditor() {
+  const [content, setContent] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    api.knowledgeBrainGet()
+      .then((data) => { setContent(data.content); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await api.knowledgeBrainSave(content);
+      setSavedAt(new Date());
+      setDirty(false);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function formatSavedAt(d: Date): string {
+    const diff = Math.round((Date.now() - d.getTime()) / 1000);
+    if (diff < 60) return `נשמר לפני ${diff} שניות`;
+    return `נשמר ב-${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+  }
+
+  if (loading) {
+    return <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>טוען...</div>;
+  }
+
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+        <span style={{ fontSize: 10, color: savedAt && !dirty ? 'var(--success)' : 'var(--text-muted)' }}>
+          {saving ? 'שומר...' : savedAt ? formatSavedAt(savedAt) : dirty ? 'שינויים לא שמורים' : 'הוראות הכתיבה של Claude'}
+        </span>
+        <button
+          className="btn-primary"
+          onClick={handleSave}
+          disabled={saving || !dirty}
+          style={{ fontSize: 11, padding: '4px 14px' }}
+        >
+          {saving ? '...' : 'שמור'}
+        </button>
+      </div>
+      <textarea
+        value={content}
+        onChange={(e) => { setContent(e.target.value); setDirty(true); }}
+        dir="auto"
+        placeholder="כתוב כאן את הוראות הכתיבה, הסגנון שלך, Brand guide..."
+        style={{
+          flex: 1,
+          resize: 'none',
+          border: 'none',
+          outline: 'none',
+          padding: '10px 12px',
+          fontSize: 12,
+          lineHeight: 1.7,
+          background: 'var(--bg-primary)',
+          color: 'var(--text-primary)',
+          fontFamily: 'inherit',
+        }}
+      />
+    </div>
+  );
+}
+
+// ── Knowledge Files ───────────────────────────────────────────────────────────
+
+function KnowledgeFiles() {
   const [files, setFiles] = useState<KnowledgeFile[]>([]);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -564,7 +671,7 @@ function KnowledgeScreen() {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: 10, borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
         <div style={{ fontSize: 11, color: 'var(--text-secondary)', direction: 'rtl', marginBottom: 10, lineHeight: 1.6 }}>
-          העלה קבצי ידע — Brand guide, תסריטים לדוגמה, נתוני קהל — ו-Claude ישתמש בהם בכל פייפליין.
+          קבצים נוספים — תסריטים לדוגמה, נתוני קהל, Brand guide כקובץ.
         </div>
         <input
           ref={fileInputRef}
@@ -579,14 +686,14 @@ function KnowledgeScreen() {
           disabled={uploading}
           style={{ width: '100%' }}
         >
-          {uploading ? 'מעלה...' : '+ העלה קובץ ידע'}
+          {uploading ? 'מעלה...' : '+ העלה קובץ'}
         </button>
       </div>
 
       <div className="scrollable" style={{ flex: 1, padding: 10 }}>
         {files.length === 0 && (
           <div style={{ color: 'var(--text-muted)', textAlign: 'center', marginTop: 40, fontSize: 12 }}>
-            אין קבצי ידע עדיין
+            אין קבצים
           </div>
         )}
         {files.map((f) => (
