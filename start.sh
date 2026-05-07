@@ -28,34 +28,35 @@ if grep -q "your_api_key_here" "$ENV_FILE" 2>/dev/null; then
   exit 1
 fi
 
-# ── בדיקה אם השרת כבר פועל ────────────────────
-if lsof -i :3333 &>/dev/null; then
-  echo -e "${YELLOW}⚠ שרת כבר פועל על port 3333${NC}"
-  echo ""
-else
-  echo -e "${GREEN}✓ מפעיל שרת על http://localhost:3333${NC}"
+# ── בדיקת symlink ─────────────────────────────
+PLUGIN_LINK="$HOME/Library/Application Support/Adobe/CEP/extensions/PremierAI"
+if [ ! -L "$PLUGIN_LINK" ]; then
+  echo -e "${YELLOW}⚠ תוסף לא מחובר. מריץ setup...${NC}"
+  bash "$SCRIPT_DIR/setup.sh"
 fi
 
-# ── הוראות UXP ────────────────────────────────
+# ── הפעלת Plugin Watch (rebuild אוטומטי) ──────
+echo -e "${GREEN}✓ מפעיל Plugin (rebuild אוטומטי בשמירה)...${NC}"
+cd "$SCRIPT_DIR/plugin"
+npm run dev > /tmp/premiere-ai-webpack.log 2>&1 &
+WEBPACK_PID=$!
+
+# ── הוראות ────────────────────────────────────
 echo ""
-echo -e "${CYAN}  ─── איך לטעון ב-Premiere Pro ───────────────${NC}"
+echo -e "${CYAN}  ─────────────────────────────────────────────${NC}"
+echo -e "  פתח Premiere Pro ←"
+echo -e "  Window → Extensions → AI Editor"
+echo -e "${CYAN}  ─────────────────────────────────────────────${NC}"
 echo ""
-echo "  1. פתח Adobe UXP Developer Tool"
-echo "     (אם עוד לא הורדת: developers.adobe.com/uxp/devtool)"
-echo ""
-echo "  2. לחץ 'Add Plugin'"
-echo "     בחר תיקייה: $(dirname "$SCRIPT_DIR")/plugin"
-echo "     (שם נמצא manifest.json)"
-echo ""
-echo "  3. לחץ 'Load'"
-echo ""
-echo "  4. ב-Premiere Pro:"
-echo "     Window → Extensions → AI Editor"
+echo -e "  אם התוסף לא מופיע: הפעל מחדש את Premiere"
 echo ""
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "  שרת פועל — אל תסגור את החלון הזה"
+echo -e "  שרת פועל — אל תסגור חלון זה  (Ctrl+C לעצירה)"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
+
+# ── ניקוי בסיום ──────────────────────────────
+trap "echo ''; echo 'עוצר...'; kill $WEBPACK_PID 2>/dev/null; exit 0" EXIT INT TERM
 
 # ── הפעלת השרת (בחזית, עד Ctrl+C) ───────────
 cd "$SCRIPT_DIR/server"

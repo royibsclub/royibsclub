@@ -22,7 +22,7 @@ echo -e "━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 # ── בדיקת Node.js ──────────────────────────────
-echo -e "${YELLOW}[1/4]${NC} בודק Node.js..."
+echo -e "${YELLOW}[1/6]${NC} בודק Node.js..."
 
 if ! command -v node &> /dev/null; then
   echo -e "${RED}✗ Node.js לא מותקן.${NC}"
@@ -48,7 +48,7 @@ echo -e "${GREEN}✓ Node.js $(node --version)${NC}"
 
 # ── הגדרת API Key ──────────────────────────────
 echo ""
-echo -e "${YELLOW}[2/4]${NC} הגדרת Anthropic API Key..."
+echo -e "${YELLOW}[2/6]${NC} הגדרת Anthropic API Key..."
 
 ENV_FILE="$SCRIPT_DIR/server/.env"
 
@@ -76,18 +76,34 @@ fi
 
 # ── התקנת תלויות Server ────────────────────────
 echo ""
-echo -e "${YELLOW}[3/4]${NC} מתקין חבילות Server..."
+echo -e "${YELLOW}[3/6]${NC} מתקין חבילות Server..."
 cd "$SCRIPT_DIR/server"
 npm install --silent
 echo -e "${GREEN}✓ Server מוכן${NC}"
 
 # ── התקנת ובניית Plugin ────────────────────────
 echo ""
-echo -e "${YELLOW}[4/4]${NC} מתקין ובונה Plugin..."
+echo -e "${YELLOW}[4/6]${NC} מתקין ובונה Plugin..."
 cd "$SCRIPT_DIR/plugin"
 npm install --silent
 npm run build 2>&1 | tail -5
 echo -e "${GREEN}✓ Plugin נבנה ב: plugin/dist/${NC}"
+
+# ── הפעלת CEP Debug Mode ──────────────────────
+echo ""
+echo -e "${YELLOW}[5/6]${NC} מפעיל CEP Debug Mode..."
+defaults write com.adobe.CSXS.11 PlayerDebugMode 1
+defaults write com.adobe.CSXS.10 PlayerDebugMode 1
+echo -e "${GREEN}✓ CEP Debug Mode מופעל${NC}"
+
+# ── יצירת Symlink לתיקיית Premiere ────────────
+echo ""
+echo -e "${YELLOW}[6/6]${NC} מחבר תוסף ל-Premiere..."
+CEP_DIR="$HOME/Library/Application Support/Adobe/CEP/extensions"
+PLUGIN_LINK="$CEP_DIR/PremierAI"
+mkdir -p "$CEP_DIR"
+ln -sfn "$SCRIPT_DIR/plugin" "$PLUGIN_LINK"
+echo -e "${GREEN}✓ קישור נוצר: Extensions/PremierAI → plugin/${NC}"
 
 # ── יצירת סקריפט הפעלה יומי ──────────────────
 cd "$SCRIPT_DIR"
@@ -100,11 +116,10 @@ echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━�
 echo -e "  ✓ ההתקנה הושלמה!"
 echo -e "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
-echo "  שלב הבא — טעינה ב-Premiere Pro:"
+echo "  שלב הבא — כל פעם לפני עבודה:"
 echo ""
-echo "  1. הורד Adobe UXP Developer Tool:"
-echo "     https://developers.adobe.com/uxp/devtool/download/"
+echo "    bash start.sh"
 echo ""
-echo "  2. הרץ: bash start.sh"
-echo "     (מפעיל את השרת ומסביר איך לטעון)"
+echo "  ואז ב-Premiere Pro:"
+echo "    Window → Extensions → AI Editor"
 echo ""

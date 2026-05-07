@@ -253,32 +253,29 @@ npm run dev</code></pre>
     </div>
   </div>
 
-  <h3>התקנת התוסף ב-Premiere</h3>
+  <h3>התקנת התוסף ב-Premiere (Mac — פשוט!)</h3>
   <div class="step">
     <div class="step-num">1</div>
     <div class="step-body">
-      <div class="step-title">בנה את התוסף</div>
-      <pre><code>cd plugin
-npm install
-npm run build</code></pre>
+      <div class="step-title">הרץ script ההתקנה — פעם אחת בלבד</div>
+      <pre><code>bash setup.sh</code></pre>
+      <p>הסקריפט מתקין חבילות, בונה את התוסף, מפעיל CEP debug mode, ויוצר קישור אוטומטי לתיקיית Premiere.</p>
     </div>
   </div>
   <div class="step">
     <div class="step-num">2</div>
     <div class="step-body">
-      <div class="step-title">העתק את התוסף לתיקיית Premiere</div>
-      <p><strong>Windows:</strong></p>
-      <pre><code>%APPDATA%\Adobe\CEP\extensions\PremierAI\</code></pre>
-      <p><strong>macOS:</strong></p>
-      <pre><code>~/Library/Application Support/Adobe/CEP/extensions/PremierAI/</code></pre>
-      <p>העתק את תוכן תיקיית <code>plugin/dist/</code> לשם.</p>
+      <div class="step-title">כל יום לפני עבודה — הפעל</div>
+      <pre><code>bash start.sh</code></pre>
+      <p>מפעיל את השרת + rebuild אוטומטי של הפלאגין בכל שינוי קוד.</p>
     </div>
   </div>
   <div class="step">
     <div class="step-num">3</div>
     <div class="step-body">
-      <div class="step-title">הפעל Premiere ופתח את התוסף</div>
-      <p>Window → Extensions → Premiere AI Studio</p>
+      <div class="step-title">פתח את התוסף ב-Premiere Pro</div>
+      <p><strong>Window → Extensions → AI Editor</strong></p>
+      <p style="color:#94a3b8;font-size:13px;">אם לא מופיע — הפעל מחדש את Premiere (פעם ראשונה בלבד)</p>
     </div>
   </div>
 
