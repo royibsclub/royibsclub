@@ -281,4 +281,14 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     }).then((r) => r.json() as Promise<{ ok: boolean }>),
+
+  // ── Hooks ─────────────────────────────────────────────────────────────────
+
+  generateHooks: (body: {
+    topic: string;
+    platform?: string;
+    character?: string;
+    niche?: string;
+  }) =>
+    post<{ hooks: string[] }>('/hooks/generate', body),
 };

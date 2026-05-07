@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { api } from '../services/api';
+import { addCaptionsBulk } from '../premiere/captions';
 
 type PunctuationMode = 'remove' | 'keep' | 'auto';
 
@@ -36,6 +37,8 @@ export default function CaptionsPanel() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [applying, setApplying] = useState(false);
+  const [applyResult, setApplyResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [transcribing, setTranscribing] = useState(false);
   const [transcribeError, setTranscribeError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -73,6 +76,31 @@ export default function CaptionsPanel() {
       setTranscribing(false);
     }
   }, []);
+
+  const applyToTimeline = useCallback(() => {
+    if (lines.length === 0) return;
+    setApplying(true);
+    setApplyResult(null);
+    try {
+      const result = addCaptionsBulk(lines);
+      const total = result.applied + result.failed;
+      if (result.applied > 0) {
+        setApplyResult({
+          ok: true,
+          msg: `✓ ${result.applied}/${total} כתוביות הוחלו בהצלחה${result.failed > 0 ? ` (${result.failed} נכשלו)` : ''}`,
+        });
+      } else {
+        setApplyResult({
+          ok: false,
+          msg: 'שגיאה — וודא שיש Sequence פעיל בפרמייר.',
+        });
+      }
+    } catch (e) {
+      setApplyResult({ ok: false, msg: e instanceof Error ? e.message : 'שגיאה' });
+    } finally {
+      setApplying(false);
+    }
+  }, [lines]);
 
   function copy(content: string, key: string) {
     navigator.clipboard.writeText(content).then(() => {
@@ -281,21 +309,45 @@ export default function CaptionsPanel() {
           </div>
 
           {/* Actions */}
-          <div style={{ padding: '8px 10px', borderTop: '1px solid var(--border)', display: 'flex', gap: 8, flexShrink: 0 }}>
-            <button
-              className="btn-ghost"
-              onClick={() => copy(srt, 'srt')}
-              style={{ flex: 1, fontSize: 11 }}
-            >
-              {copied === 'srt' ? '✓ הועתק' : '📋 העתק SRT'}
-            </button>
-            <button
-              className="btn-ghost"
-              onClick={() => copy(lines.map((l) => l.text).join('\n'), 'text')}
-              style={{ flex: 1, fontSize: 11 }}
-            >
-              {copied === 'text' ? '✓ הועתק' : '📋 העתק טקסט'}
-            </button>
+          <div style={{ padding: '8px 10px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+            {applyResult && (
+              <div style={{
+                marginBottom: 6,
+                padding: '6px 10px',
+                borderRadius: 5,
+                fontSize: 10,
+                direction: 'rtl',
+                background: applyResult.ok ? 'rgba(52,211,153,0.1)' : 'rgba(239,68,68,0.1)',
+                color: applyResult.ok ? 'var(--success)' : '#ef4444',
+                border: `1px solid ${applyResult.ok ? 'rgba(52,211,153,0.3)' : 'rgba(239,68,68,0.3)'}`,
+              }}>
+                {applyResult.msg}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button
+                className="btn-ghost"
+                onClick={() => copy(srt, 'srt')}
+                style={{ flex: 1, fontSize: 10 }}
+              >
+                {copied === 'srt' ? '✓' : '📋 SRT'}
+              </button>
+              <button
+                className="btn-ghost"
+                onClick={() => copy(lines.map((l) => l.text).join('\n'), 'text')}
+                style={{ flex: 1, fontSize: 10 }}
+              >
+                {copied === 'text' ? '✓' : '📋 טקסט'}
+              </button>
+              <button
+                className="btn-primary"
+                onClick={applyToTimeline}
+                disabled={applying || lines.length === 0}
+                style={{ flex: 2, fontSize: 11 }}
+              >
+                {applying ? '⏳...' : '▶ שלח לפרמייר'}
+              </button>
+            </div>
           </div>
         </>
       )}

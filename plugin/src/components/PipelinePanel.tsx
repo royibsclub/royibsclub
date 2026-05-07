@@ -637,9 +637,41 @@ function BrainEditor() {
 
 // ── Knowledge Files ───────────────────────────────────────────────────────────
 
+const CATEGORY_COLORS: Record<string, string> = {
+  brand: '#a78bfa',
+  script_examples: '#34d399',
+  audience: '#60a5fa',
+  guidelines: '#fbbf24',
+  other: 'var(--text-muted)',
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  brand: 'מותג',
+  script_examples: 'תסריטים',
+  audience: 'קהל',
+  guidelines: 'הנחיות',
+  other: 'אחר',
+};
+
+function fileIcon(name: string): string {
+  const ext = name.split('.').pop()?.toLowerCase() ?? '';
+  if (ext === 'mogrt') return '🎬';
+  if (ext === 'prfpset' || ext === 'prpreset') return '🎨';
+  if (ext === 'pdf') return '📕';
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) return '🖼️';
+  if (['mp4', 'mov', 'avi', 'mkv', 'webm'].includes(ext)) return '🎥';
+  if (['mp3', 'wav', 'm4a', 'aac'].includes(ext)) return '🎵';
+  if (ext === 'zip' || ext === '7z') return '📦';
+  if (['md', 'txt'].includes(ext)) return '📝';
+  if (ext === 'docx' || ext === 'doc') return '📄';
+  return '📎';
+}
+
 function KnowledgeFiles() {
   const [files, setFiles] = useState<KnowledgeFile[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [applyMsg, setApplyMsg] = useState<{ name: string; ok: boolean } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { loadFiles(); }, []);
@@ -667,16 +699,49 @@ function KnowledgeFiles() {
     await loadFiles();
   }
 
+  function handleApplyEffect(f: KnowledgeFile) {
+    // Send apply_effect action via the execute endpoint
+    fetch('http://localhost:3333/execute/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'add_effect', effectName: f.originalName }),
+    })
+      .then((r) => r.json())
+      .then(() => setApplyMsg({ name: f.originalName, ok: true }))
+      .catch(() => setApplyMsg({ name: f.originalName, ok: false }));
+    setTimeout(() => setApplyMsg(null), 2500);
+  }
+
+  const query = search.trim().toLowerCase();
+  const filtered = query
+    ? files.filter((f) => f.originalName.toLowerCase().includes(query) || f.category.includes(query))
+    : files;
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: 10, borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
-        <div style={{ fontSize: 11, color: 'var(--text-secondary)', direction: 'rtl', marginBottom: 10, lineHeight: 1.6 }}>
-          קבצים נוספים — תסריטים לדוגמה, נתוני קהל, Brand guide כקובץ.
-        </div>
+      {/* Header */}
+      <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="חפש קובץ..."
+          dir="rtl"
+          style={{
+            width: '100%',
+            fontSize: 11,
+            padding: '6px 10px',
+            background: 'var(--bg-primary)',
+            color: 'var(--text-primary)',
+            border: '1px solid var(--border)',
+            borderRadius: 6,
+            boxSizing: 'border-box',
+            marginBottom: 8,
+          }}
+        />
         <input
           ref={fileInputRef}
           type="file"
-          accept=".txt,.md,.pdf,.docx"
+          accept=".txt,.md,.pdf,.docx,.mogrt,.prfpset,.prpreset,.zip"
           onChange={handleUpload}
           style={{ display: 'none' }}
         />
@@ -684,35 +749,111 @@ function KnowledgeFiles() {
           className="btn-primary"
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
-          style={{ width: '100%' }}
+          style={{ width: '100%', fontSize: 11 }}
         >
-          {uploading ? 'מעלה...' : '+ העלה קובץ'}
+          {uploading ? '⏳ מעלה...' : '+ העלה קובץ'}
         </button>
       </div>
 
+      {/* Apply feedback */}
+      {applyMsg && (
+        <div style={{
+          margin: '6px 10px 0',
+          padding: '5px 10px',
+          fontSize: 10,
+          direction: 'rtl',
+          borderRadius: 5,
+          background: applyMsg.ok ? 'rgba(52,211,153,0.1)' : 'rgba(239,68,68,0.1)',
+          color: applyMsg.ok ? 'var(--success)' : '#ef4444',
+          border: `1px solid ${applyMsg.ok ? 'rgba(52,211,153,0.3)' : 'rgba(239,68,68,0.3)'}`,
+          flexShrink: 0,
+        }}>
+          {applyMsg.ok ? `✓ "${applyMsg.name}" נשלח לפרמייר` : `שגיאה בהחלת "${applyMsg.name}"`}
+        </div>
+      )}
+
+      {/* Grid */}
       <div className="scrollable" style={{ flex: 1, padding: 10 }}>
-        {files.length === 0 && (
+        {filtered.length === 0 && (
           <div style={{ color: 'var(--text-muted)', textAlign: 'center', marginTop: 40, fontSize: 12 }}>
-            אין קבצים
+            {files.length === 0 ? 'אין קבצים — העלה קובץ להתחיל' : 'לא נמצאו תוצאות'}
           </div>
         )}
-        {files.map((f) => (
-          <div key={f.name} className="card" style={{ marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ flex: 1, direction: 'rtl' }}>
-              <div style={{ fontSize: 11, fontWeight: 500 }}>{f.originalName}</div>
-              <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-                {f.category} · {(f.sizeBytes / 1024).toFixed(0)}KB
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {filtered.map((f) => {
+            const isEffect = ['mogrt', 'prfpset', 'prpreset'].includes(
+              f.originalName.split('.').pop()?.toLowerCase() ?? ''
+            );
+            return (
+              <div
+                key={f.name}
+                style={{
+                  background: 'var(--bg-secondary)',
+                  borderRadius: 8,
+                  padding: '10px 10px 8px',
+                  border: '1px solid var(--border)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 6,
+                  minWidth: 0,
+                }}
+              >
+                {/* Icon + name */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                  <span style={{ fontSize: 20, flexShrink: 0, lineHeight: 1 }}>{fileIcon(f.originalName)}</span>
+                  <div style={{ flex: 1, minWidth: 0, direction: 'rtl' }}>
+                    <div style={{
+                      fontSize: 10,
+                      fontWeight: 600,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      color: 'var(--text-primary)',
+                    }}>
+                      {f.originalName}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                      <span style={{
+                        fontSize: 9,
+                        padding: '1px 5px',
+                        borderRadius: 3,
+                        background: `${CATEGORY_COLORS[f.category]}22`,
+                        color: CATEGORY_COLORS[f.category],
+                        fontWeight: 600,
+                      }}>
+                        {CATEGORY_LABELS[f.category] ?? f.category}
+                      </span>
+                      <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>
+                        {(f.sizeBytes / 1024).toFixed(0)}KB
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div style={{ display: 'flex', gap: 4 }}>
+                  {isEffect && (
+                    <button
+                      className="btn-primary"
+                      onClick={() => handleApplyEffect(f)}
+                      style={{ flex: 1, fontSize: 9, padding: '3px 0' }}
+                    >
+                      ✨ החל
+                    </button>
+                  )}
+                  <button
+                    className="btn-ghost"
+                    onClick={() => handleDelete(f.name)}
+                    style={{ fontSize: 9, padding: '3px 8px', color: 'var(--danger)' }}
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
-            </div>
-            <button
-              className="btn-ghost"
-              onClick={() => handleDelete(f.name)}
-              style={{ fontSize: 10, color: 'var(--danger)', padding: '3px 8px' }}
-            >
-              מחק
-            </button>
-          </div>
-        ))}
+            );
+          })}
+        </div>
       </div>
     </div>
   );
