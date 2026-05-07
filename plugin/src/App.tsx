@@ -1,115 +1,141 @@
 import React, { useState, useEffect } from 'react';
-import ChatPanel from './components/ChatPanel';
-import AnalysisPanel from './components/AnalysisPanel';
-import StyleProfilePanel from './components/StyleProfile';
-import ResearchPanel from './components/ResearchPanel';
-import PipelinePanel from './components/PipelinePanel';
-import CharactersPanel from './components/CharactersPanel';
-import BrandPanel from './components/BrandPanel';
-import HistoryPanel from './components/HistoryPanel';
-import CaptionsPanel from './components/CaptionsPanel';
-import HighlightPanel from './components/HighlightPanel';
-import HookPanel from './components/HookPanel';
-import SettingsPanel from './components/SettingsPanel';
+import DashboardPanel from './components/DashboardPanel';
+import EffectsPanel from './components/EffectsPanel';
+import TextCaptionsPanel from './components/TextCaptionsPanel';
+import SceneChecklist from './components/SceneChecklist';
 import DiagnosticsPanel from './components/DiagnosticsPanel';
-import { pushTimelineState, startActionPolling } from './services/premiereService';
-import type { TimelineState, Platform, StyleProfile } from '@premiere-ai/shared';
+import SettingsPanel from './components/SettingsPanel';
+import { callFn } from './premiere/bridge';
 
-type Tab = 'chat' | 'pipeline' | 'characters' | 'brand' | 'history' | 'captions' | 'analysis' | 'research' | 'profile' | 'settings' | 'highlight' | 'hooks' | 'diagnostics';
+type Tab = 'dashboard' | 'effects' | 'captions' | 'checklist' | 'diagnostics' | 'settings';
 
-const DEFAULT_CREATOR_ID = 'default';
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'dashboard', label: 'Dashboard' },
+  { id: 'effects', label: 'Effects' },
+  { id: 'captions', label: 'Captions' },
+  { id: 'checklist', label: 'Scenes' },
+  { id: 'diagnostics', label: 'Diag' },
+  { id: 'settings', label: '⚙' },
+];
+
+function fmtSec(sec: number) {
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
 
 export default function App() {
-  const [tab, setTab] = useState<Tab>('chat');
-  const [timeline, setTimeline] = useState<TimelineState | null>(null);
-  const [platform, setPlatform] = useState<Platform>('instagram_reels');
-  const [connected, setConnected] = useState(false);
-  const [profile, setProfile] = useState<StyleProfile | null>(null);
+  const [tab, setTab] = useState<Tab>('dashboard');
+  const [serverOk, setServerOk] = useState(false);
+  const [premiereOk, setPremiereOk] = useState(false);
+  const [sequenceName, setSequenceName] = useState('');
+  const [playheadSec, setPlayheadSec] = useState<number | null>(null);
 
   useEffect(() => {
-    // Start polling for pending actions from the server
-    startActionPolling(1500);
+    let alive = true;
 
-    // Push timeline state every 3 seconds
-    const interval = setInterval(async () => {
+    async function poll() {
+      // Server health
       try {
-        const state = await pushTimelineState();
-        if (state) {
-          setTimeline(state);
-          setConnected(true);
+        const r = await fetch('http://localhost:3333/health');
+        if (alive) setServerOk(r.ok);
+      } catch {
+        if (alive) setServerOk(false);
+      }
+
+      // Premiere via bridge
+      try {
+        const seq = await callFn('getSequenceName');
+        if (!alive) return;
+        const ok = !seq.startsWith('error') && !seq.startsWith('EvalScript');
+        setPremiereOk(ok);
+        if (ok) {
+          setSequenceName(seq === 'none' ? '' : seq);
+          const t = await callFn('getPlayheadTime');
+          const n = parseFloat(t);
+          if (!isNaN(n)) setPlayheadSec(n);
+        } else {
+          setSequenceName('');
+          setPlayheadSec(null);
         }
       } catch {
-        setConnected(false);
+        if (alive) {
+          setPremiereOk(false);
+          setSequenceName('');
+        }
       }
-    }, 3000);
+    }
 
-    // Initial push
-    pushTimelineState().then((state) => {
-      if (state) { setTimeline(state); setConnected(true); }
-    }).catch(() => setConnected(false));
-
-    return () => clearInterval(interval);
+    poll();
+    const id = setInterval(poll, 3000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
   }, []);
 
-  const TABS: { id: Tab; label: string }[] = [
-    { id: 'chat', label: '💬' },
-    { id: 'pipeline', label: '📅' },
-    { id: 'characters', label: '🎭' },
-    { id: 'brand', label: '🎨' },
-    { id: 'history', label: '📈' },
-    { id: 'captions', label: '✏️' },
-    { id: 'analysis', label: '📊' },
-    { id: 'research', label: '🔍' },
-    { id: 'profile', label: '👤' },
-    { id: 'highlight', label: '🔦' },
-    { id: 'hooks', label: '🎣' },
-    { id: 'diagnostics', label: '🔧' },
-    { id: 'settings', label: '⚙️' },
-  ];
+  const Dot = ({ ok }: { ok: boolean }) => (
+    <span
+      style={{
+        display: 'inline-block',
+        width: 6,
+        height: 6,
+        borderRadius: '50%',
+        background: ok ? 'var(--success)' : 'var(--text-muted)',
+        marginRight: 4,
+        flexShrink: 0,
+        verticalAlign: 'middle',
+      }}
+    />
+  );
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-primary)' }}>
-      {/* Header */}
+
+      {/* Status bar */}
       <div
         style={{
-          padding: '8px 12px',
+          padding: '5px 10px',
           background: 'var(--bg-secondary)',
           borderBottom: '1px solid var(--border)',
           display: 'flex',
           alignItems: 'center',
-          gap: 8,
+          gap: 10,
           flexShrink: 0,
+          fontSize: 10,
         }}
       >
-        <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--accent)' }}>AI Editor</span>
-        <div style={{ flex: 1 }} />
-
-        {/* Platform selector */}
-        <select
-          value={platform}
-          onChange={(e) => setPlatform(e.target.value as Platform)}
-          style={{ fontSize: 10, padding: '2px 6px', width: 'auto' }}
-        >
-          <option value="tiktok">TikTok</option>
-          <option value="instagram_reels">Reels</option>
-          <option value="youtube_shorts">YT Shorts</option>
-          <option value="youtube">YouTube</option>
-        </select>
-
-        {/* Connection indicator */}
-        <div
-          style={{
-            width: 7,
-            height: 7,
-            borderRadius: '50%',
-            background: connected ? 'var(--success)' : 'var(--text-muted)',
-            flexShrink: 0,
-          }}
-          title={connected ? 'מחובר ל-Premiere' : 'לא מחובר'}
-        />
+        <span style={{ color: serverOk ? 'var(--text-secondary)' : 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+          <Dot ok={serverOk} />Server
+        </span>
+        <span style={{ color: 'var(--border)' }}>|</span>
+        <span style={{ color: premiereOk ? 'var(--text-secondary)' : 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+          <Dot ok={premiereOk} />Premiere
+        </span>
+        {sequenceName && (
+          <>
+            <span style={{ color: 'var(--border)' }}>|</span>
+            <span
+              style={{
+                flex: 1,
+                color: 'var(--text-secondary)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {sequenceName}
+            </span>
+          </>
+        )}
+        {playheadSec !== null && (
+          <span style={{ fontFamily: 'monospace', color: 'var(--text-muted)', flexShrink: 0 }}>
+            {fmtSec(playheadSec)}
+          </span>
+        )}
       </div>
 
-      {/* Tabs */}
+      {/* Tab bar */}
       <div className="tab-bar">
         {TABS.map((t) => (
           <button
@@ -124,53 +150,13 @@ export default function App() {
 
       {/* Content */}
       <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-        {tab === 'chat' && (
-          <ChatPanel timeline={timeline} platform={platform} creatorId={DEFAULT_CREATOR_ID} />
-        )}
-        {tab === 'analysis' && (
-          <AnalysisPanel timeline={timeline} platform={platform} creatorId={DEFAULT_CREATOR_ID} />
-        )}
-        {tab === 'pipeline' && <PipelinePanel />}
-        {tab === 'characters' && <CharactersPanel />}
-        {tab === 'brand' && <BrandPanel />}
-        {tab === 'history' && <HistoryPanel />}
-        {tab === 'captions' && <CaptionsPanel />}
-        {tab === 'research' && (
-          <ResearchPanel platform={platform} />
-        )}
-        {tab === 'profile' && (
-          <StyleProfilePanel
-            creatorId={DEFAULT_CREATOR_ID}
-            onProfileLoaded={(p) => setProfile(p)}
-          />
-        )}
-        {tab === 'highlight' && <HighlightPanel />}
-        {tab === 'hooks' && <HookPanel />}
+        {tab === 'dashboard' && <DashboardPanel />}
+        {tab === 'effects' && <EffectsPanel />}
+        {tab === 'captions' && <TextCaptionsPanel />}
+        {tab === 'checklist' && <SceneChecklist />}
         {tab === 'diagnostics' && <DiagnosticsPanel />}
         {tab === 'settings' && <SettingsPanel />}
       </div>
-
-      {/* Footer: timeline info */}
-      {timeline && (
-        <div
-          style={{
-            padding: '4px 10px',
-            background: 'var(--bg-secondary)',
-            borderTop: '1px solid var(--border)',
-            fontSize: 10,
-            color: 'var(--text-muted)',
-            display: 'flex',
-            gap: 10,
-            flexShrink: 0,
-          }}
-        >
-          <span>{timeline.sequenceName}</span>
-          <span>{timeline.duration.toFixed(1)}ש</span>
-          <span>{timeline.width}×{timeline.height}</span>
-          <span>{timeline.frameRate}fps</span>
-          {profile && <span style={{ marginRight: 'auto', color: 'var(--text-secondary)' }}>{profile.name}</span>}
-        </div>
-      )}
     </div>
   );
 }
