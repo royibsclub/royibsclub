@@ -11,10 +11,11 @@ import CaptionsPanel from './components/CaptionsPanel';
 import HighlightPanel from './components/HighlightPanel';
 import HookPanel from './components/HookPanel';
 import SettingsPanel from './components/SettingsPanel';
+import DiagnosticsPanel from './components/DiagnosticsPanel';
 import { pushTimelineState, startActionPolling } from './services/premiereService';
 import type { TimelineState, Platform, StyleProfile } from '@premiere-ai/shared';
 
-type Tab = 'chat' | 'pipeline' | 'characters' | 'brand' | 'history' | 'captions' | 'analysis' | 'research' | 'profile' | 'settings' | 'highlight' | 'hooks';
+type Tab = 'chat' | 'pipeline' | 'characters' | 'brand' | 'history' | 'captions' | 'analysis' | 'research' | 'profile' | 'settings' | 'highlight' | 'hooks' | 'diagnostics';
 
 const DEFAULT_CREATOR_ID = 'default';
 
@@ -62,6 +63,7 @@ export default function App() {
     { id: 'profile', label: '👤' },
     { id: 'highlight', label: '🔦' },
     { id: 'hooks', label: '🎣' },
+    { id: 'diagnostics', label: '🔧' },
     { id: 'settings', label: '⚙️' },
   ];
 
@@ -144,6 +146,7 @@ export default function App() {
         )}
         {tab === 'highlight' && <HighlightPanel />}
         {tab === 'hooks' && <HookPanel />}
+        {tab === 'diagnostics' && <DiagnosticsPanel />}
         {tab === 'settings' && <SettingsPanel />}
       </div>
 
