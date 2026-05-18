@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { callFn } from '../premiere/bridge';
 
-type Category = 'zooms' | 'titles' | 'sfx' | 'overlays' | 'screen' | 'utility';
+type Category = 'zooms' | 'titles' | 'voice' | 'sfx' | 'overlays' | 'screen' | 'utility';
 
 const CATEGORIES: { id: Category; label: string }[] = [
   { id: 'zooms', label: 'Zooms' },
   { id: 'titles', label: 'Titles' },
+  { id: 'voice', label: 'Voice' },
   { id: 'sfx', label: 'SFX' },
   { id: 'overlays', label: 'Overlays' },
   { id: 'screen', label: 'Screen' },
@@ -85,6 +86,10 @@ export default function EffectsPanel() {
   const [utilResults, setUtilResults] = useState<Record<string, ActionResult | null>>({});
   const [utilBusy, setUtilBusy] = useState<string | null>(null);
 
+  const [voiceResult, setVoiceResult] = useState<ActionResult | null>(null);
+  const [voiceBusy, setVoiceBusy] = useState(false);
+  const [showManual, setShowManual] = useState(false);
+
   async function doZoom() {
     setZoomBusy(true);
     const r = await callFn('addZoomPunchAtPlayhead', zoomScale);
@@ -98,6 +103,17 @@ export default function EffectsPanel() {
       setCopied(presetId);
       setTimeout(() => setCopied(null), 1500);
     });
+  }
+
+  async function doVoicePreset() {
+    setVoiceBusy(true);
+    setVoiceResult(null);
+    const r = await callFn('applyAIVoicePreset');
+    const isOk = r.startsWith('ok:');
+    const isManual = r.startsWith('manual:');
+    setVoiceResult({ ok: isOk, value: r });
+    if (isManual) setShowManual(true);
+    setVoiceBusy(false);
   }
 
   async function utilAct(key: string, fn: () => Promise<string>) {
@@ -116,22 +132,23 @@ export default function EffectsPanel() {
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Category tabs */}
-      <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', flexShrink: 0, background: 'var(--bg-secondary)' }}>
+      {/* Category tabs — scrollable so any number of tabs fits */}
+      <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', flexShrink: 0, background: 'var(--bg-secondary)', overflowX: 'auto' }}>
         {CATEGORIES.map((c) => (
           <button
             key={c.id}
             onClick={() => setCat(c.id)}
             style={{
-              flex: 1,
+              flexShrink: 0,
               background: 'transparent',
               color: cat === c.id ? 'var(--accent)' : 'var(--text-muted)',
               border: 'none',
               borderBottom: cat === c.id ? '2px solid var(--accent)' : '2px solid transparent',
-              padding: '7px 2px',
+              padding: '7px 10px',
               fontSize: 10,
               fontWeight: cat === c.id ? 600 : 400,
               cursor: 'pointer',
+              whiteSpace: 'nowrap',
             }}
           >
             {c.label}
@@ -213,6 +230,158 @@ export default function EffectsPanel() {
             <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 8, padding: '6px 0', borderTop: '1px solid var(--border)' }}>
               Copies style name + text to clipboard. Apply via Premiere text tool.
             </div>
+          </>
+        )}
+
+        {/* VOICE */}
+        {cat === 'voice' && (
+          <>
+            {/* Header */}
+            <div className="card" style={{ margin: '0 0 8px', borderColor: 'rgba(123,97,255,0.3)', background: 'rgba(123,97,255,0.06)' }}>
+              <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 3 }}>ElevenLabs Humanizer</div>
+              <div style={{ fontSize: 10, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                Processing chain that makes AI voiceover sound natural — reduces the characteristic ElevenLabs brightness and adds room warmth.
+              </div>
+            </div>
+
+            {/* Processing chain */}
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 6 }}>
+              Processing Chain
+            </div>
+
+            {[
+              {
+                step: '1',
+                name: 'High-Pass Filter',
+                desc: 'Cutoff 80 Hz · 12 dB/oct',
+                detail: 'Remove low-frequency rumble. AI voices have no natural floor noise — this cleans the sub-bass.',
+                color: '#38bdf8',
+              },
+              {
+                step: '2',
+                name: 'Parametric EQ',
+                desc: '4 bands',
+                detail: [
+                  '↑ 150 Hz  +1.5 dB  — body & warmth',
+                  '↓ 450 Hz  −1.5 dB  — remove boxiness',
+                  '↑ 3000 Hz +1.0 dB  — presence',
+                  '↓ 10 kHz  −2.5 dB  — reduce AI brightness',
+                ].join('\n'),
+                color: '#a78bfa',
+                mono: true,
+              },
+              {
+                step: '3',
+                name: 'Compressor / Dynamics',
+                desc: 'Threshold −18 dB · Ratio 3:1 · Attack 8 ms · Release 80 ms · Makeup +2 dB',
+                detail: 'Adds natural level variation. ElevenLabs has perfectly consistent dynamics — compression makes it feel like a real voice.',
+                color: '#4ade80',
+              },
+              {
+                step: '4',
+                name: 'Studio Reverb',
+                desc: 'Room Size 15% · Mix 8% · Pre-delay 3 ms',
+                detail: 'Subtle room tone. Without reverb, AI voice sounds like it was recorded in a void. 8% mix is almost imperceptible but adds life.',
+                color: '#fb923c',
+              },
+              {
+                step: '5',
+                name: 'Hard Limiter',
+                desc: 'Max −1 dBFS',
+                detail: 'Safety ceiling. Prevents clipping after EQ boost and makeup gain.',
+                color: '#f87171',
+              },
+            ].map((s) => (
+              <div key={s.step} className="card" style={{ margin: '0 0 6px', padding: '8px 10px' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
+                  <span style={{
+                    fontSize: 9, fontWeight: 700, background: s.color + '22',
+                    color: s.color, padding: '1px 5px', borderRadius: 3, flexShrink: 0,
+                  }}>
+                    {s.step}
+                  </span>
+                  <span style={{ fontSize: 11, fontWeight: 600 }}>{s.name}</span>
+                  <span style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'monospace' }}>{s.desc}</span>
+                </div>
+                <div style={{
+                  fontSize: 9, color: 'var(--text-muted)', lineHeight: 1.6,
+                  fontFamily: s.mono ? 'monospace' : undefined,
+                  whiteSpace: s.mono ? 'pre' : undefined,
+                }}>
+                  {s.detail}
+                </div>
+              </div>
+            ))}
+
+            {/* Apply button */}
+            <div style={{ marginTop: 10 }}>
+              <button
+                className="btn-primary"
+                onClick={doVoicePreset}
+                disabled={voiceBusy}
+                style={{ width: '100%', fontSize: 11, marginBottom: 6 }}
+              >
+                {voiceBusy ? '⏳ Applying…' : 'Apply Preset to Audio Clip at Playhead'}
+              </button>
+
+              {voiceResult && (
+                <div style={{
+                  padding: '7px 10px',
+                  borderRadius: 5,
+                  fontSize: 10,
+                  marginBottom: 6,
+                  background: voiceResult.ok
+                    ? 'rgba(76,175,80,0.1)'
+                    : voiceResult.value.startsWith('manual:')
+                    ? 'rgba(255,152,0,0.1)'
+                    : 'rgba(244,67,54,0.1)',
+                  color: voiceResult.ok ? 'var(--success)' : voiceResult.value.startsWith('manual:') ? 'var(--warning)' : 'var(--danger)',
+                  border: `1px solid ${voiceResult.ok ? 'rgba(76,175,80,0.3)' : voiceResult.value.startsWith('manual:') ? 'rgba(255,152,0,0.3)' : 'rgba(244,67,54,0.3)'}`,
+                  direction: 'ltr',
+                }}>
+                  {voiceResult.ok && '✓ Effects added — set parameters below manually.'}
+                  {voiceResult.value.startsWith('manual:') && `⚠ Clip found (${voiceResult.value.replace('manual:', '').split('_qe_err')[0]}). QE DOM unavailable — apply effects manually.`}
+                  {!voiceResult.ok && !voiceResult.value.startsWith('manual:') && `✗ ${voiceResult.value}`}
+                </div>
+              )}
+
+              {/* Manual steps toggle */}
+              <button
+                className="btn-ghost"
+                onClick={() => setShowManual((v) => !v)}
+                style={{ width: '100%', fontSize: 10 }}
+              >
+                {showManual ? 'Hide Manual Steps' : 'Show Manual Steps (if auto-apply failed)'}
+              </button>
+            </div>
+
+            {/* Manual steps */}
+            {showManual && (
+              <div style={{ marginTop: 8, padding: '10px', background: 'var(--bg-secondary)', borderRadius: 6, border: '1px solid var(--border)', fontSize: 10, lineHeight: 1.8 }}>
+                <div style={{ fontWeight: 700, marginBottom: 6, fontSize: 11 }}>Manual Steps in Premiere</div>
+                <ol style={{ paddingLeft: 14, color: 'var(--text-secondary)' }}>
+                  <li>Select the audio clip (voiceover)</li>
+                  <li>Open <strong style={{ color: 'var(--text-primary)' }}>Effects</strong> panel → Audio Effects</li>
+                  <li>Add <strong style={{ color: 'var(--text-primary)' }}>Parametric Equalizer</strong><br />
+                    • Band 1: 150 Hz +1.5 dB<br />
+                    • Band 2: 450 Hz −1.5 dB (Q 1.2)<br />
+                    • Band 3: 3000 Hz +1.0 dB<br />
+                    • Band 4: 10000 Hz −2.5 dB (high shelf)<br />
+                    • High-pass: 80 Hz
+                  </li>
+                  <li>Add <strong style={{ color: 'var(--text-primary)' }}>Dynamics</strong> (compressor)<br />
+                    • Threshold: −18 dB · Ratio: 3:1<br />
+                    • Attack: 8 ms · Release: 80 ms<br />
+                    • Makeup gain: +2 dB
+                  </li>
+                  <li>Add <strong style={{ color: 'var(--text-primary)' }}>Studio Reverb</strong><br />
+                    • Room Size: 15% · Mix: 8% · Pre-delay: 3 ms
+                  </li>
+                  <li>Add <strong style={{ color: 'var(--text-primary)' }}>Hard Limiter</strong> → Max: −1 dBFS</li>
+                  <li>Save as preset: right-click any effect → <em>Save Preset</em> → name it "ElevenLabs Humanizer"</li>
+                </ol>
+              </div>
+            )}
           </>
         )}
 

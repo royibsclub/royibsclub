@@ -91,6 +91,81 @@ function setClipScaleAtPlayhead(scale) {
   } catch (e) { return 'error:' + e.message; }
 }
 
+// Returns info about the audio clip at the playhead position.
+// Searches all audio tracks. Returns 'ok:track<i>_clip<j>_name_<name>' or 'error:...'.
+function getAudioClipAtPlayhead() {
+  try {
+    var seq = app.project.activeSequence;
+    if (!seq) return 'error:no_sequence';
+    var t = seq.getPlayerPosition().seconds;
+    for (var i = 0; i < seq.audioTracks.numTracks; i++) {
+      var track = seq.audioTracks[i];
+      for (var j = 0; j < track.clips.numItems; j++) {
+        var clip = track.clips[j];
+        if (clip.inPoint.seconds <= t && clip.outPoint.seconds > t) {
+          return 'ok:track' + i + '_clip' + j + '_name_' + clip.name;
+        }
+      }
+    }
+    return 'error:no_audio_clip_at_playhead';
+  } catch (e) { return 'error:' + e.message; }
+}
+
+// Applies the AI Voice Humanizer preset to the audio clip at the playhead.
+// Attempts effect application via QE DOM (requires Premiere with QE enabled).
+// Returns 'ok:...' if effects were added, 'manual:...' if QE is unavailable (apply manually).
+function applyAIVoicePreset() {
+  try {
+    var seq = app.project.activeSequence;
+    if (!seq) return 'error:no_sequence';
+    var t = seq.getPlayerPosition().seconds;
+
+    // Find audio clip at playhead
+    var foundTrack = -1, foundClip = -1, foundName = '';
+    for (var i = 0; i < seq.audioTracks.numTracks; i++) {
+      var track = seq.audioTracks[i];
+      for (var j = 0; j < track.clips.numItems; j++) {
+        var clip = track.clips[j];
+        if (clip.inPoint.seconds <= t && clip.outPoint.seconds > t) {
+          foundTrack = i; foundClip = j; foundName = clip.name;
+          break;
+        }
+      }
+      if (foundTrack >= 0) break;
+    }
+
+    if (foundTrack < 0) return 'error:no_audio_clip_at_playhead — move playhead over a voiceover clip';
+
+    // Attempt QE DOM for effect application
+    var qe = app.enableQE();
+    if (!qe) return 'manual:' + foundName;
+
+    try {
+      var qeSeq = qe.project.getActiveSequence();
+      if (!qeSeq) return 'manual:' + foundName;
+
+      // Apply effects using QE audio track API
+      var qeATrack = qeSeq.getAudioTrackAt(foundTrack);
+      if (!qeATrack) return 'manual:' + foundName;
+
+      var qeAClip = qeATrack.getItemAt(foundClip);
+      if (!qeAClip) return 'manual:' + foundName;
+
+      // Add Parametric Equalizer
+      qeAClip.addEffect('Parametric Equalizer', 'Audio Effects');
+      // Add Dynamics (compressor)
+      qeAClip.addEffect('Dynamics', 'Audio Effects');
+      // Add Studio Reverb (subtle room)
+      qeAClip.addEffect('Studio Reverb', 'Audio Effects');
+
+      return 'ok:effects_added_to_' + foundName;
+    } catch (qeErr) {
+      // QE clip API failed — guide user to manual apply
+      return 'manual:' + foundName + '_qe_err_' + qeErr.message;
+    }
+  } catch (e) { return 'error:' + e.message; }
+}
+
 function addZoomPunchAtPlayhead(zoomScale) {
   try {
     var seq = app.project.activeSequence;
