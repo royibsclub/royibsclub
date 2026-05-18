@@ -91,7 +91,111 @@ function setClipScaleAtPlayhead(scale) {
   } catch (e) { return 'error:' + e.message; }
 }
 
-// Returns info about the audio clip at the playhead position.
+// Applies a Lumetri Color preset to the video clip at the playhead.
+// presetJSON: '{"temperature":20,"contrast":25,"highlights":-20,...}'
+// Returns 'ok:N_applied' or 'manual:reason' or 'error:reason'.
+function applyLumetriPreset(presetJSON) {
+  try {
+    var preset;
+    try { preset = JSON.parse(presetJSON); }
+    catch (e) { preset = eval('(' + presetJSON + ')'); }
+
+    var seq = app.project.activeSequence;
+    if (!seq) return 'error:no_sequence';
+    var t = seq.getPlayerPosition().seconds;
+
+    // Find video clip at playhead
+    var targetClip = null, targetTrackIdx = -1, targetClipIdx = -1;
+    for (var i = 0; i < seq.videoTracks.numTracks; i++) {
+      var track = seq.videoTracks[i];
+      for (var j = 0; j < track.clips.numItems; j++) {
+        var clip = track.clips[j];
+        if (clip.inPoint.seconds <= t && clip.outPoint.seconds > t) {
+          targetClip = clip; targetTrackIdx = i; targetClipIdx = j; break;
+        }
+      }
+      if (targetClip) break;
+    }
+    if (!targetClip) return 'error:no_video_clip_at_playhead';
+
+    // Find Lumetri Color on the clip
+    var lumetri = null;
+    for (var k = 0; k < targetClip.components.numItems; k++) {
+      if (targetClip.components[k].displayName === 'Lumetri Color') {
+        lumetri = targetClip.components[k]; break;
+      }
+    }
+
+    // If absent, try adding via QE DOM
+    if (!lumetri) {
+      var qe = app.enableQE();
+      if (qe) {
+        try {
+          var qeSeq = qe.project.getActiveSequence();
+          var qeTrack = qeSeq.getVideoTrackAt(targetTrackIdx);
+          var qeClip = qeTrack.getItemAt(targetClipIdx);
+          qeClip.addEffect('Lumetri Color', 'Video Effects');
+        } catch (qeErr) {}
+        // Re-search
+        for (var k2 = 0; k2 < targetClip.components.numItems; k2++) {
+          if (targetClip.components[k2].displayName === 'Lumetri Color') {
+            lumetri = targetClip.components[k2]; break;
+          }
+        }
+      }
+      if (!lumetri) return 'manual:' + targetClip.name + '_add_lumetri_first';
+    }
+
+    // Set a property by searching through all groups and sub-groups
+    var applied = [], missed = [];
+    function trySet(names, value) {
+      for (var g = 0; g < lumetri.properties.numItems; g++) {
+        var grp = lumetri.properties[g];
+        for (var p = 0; p < grp.properties.numItems; p++) {
+          var prop = grp.properties[p];
+          for (var n = 0; n < names.length; n++) {
+            if (prop.displayName.toLowerCase() === names[n].toLowerCase()) {
+              prop.setValue(value, true);
+              applied.push(names[0]);
+              return;
+            }
+          }
+          // One level deeper (White Balance sub-group)
+          if (prop.properties) {
+            for (var p2 = 0; p2 < prop.properties.numItems; p2++) {
+              var sub = prop.properties[p2];
+              for (var n2 = 0; n2 < names.length; n2++) {
+                if (sub.displayName.toLowerCase() === names[n2].toLowerCase()) {
+                  sub.setValue(value, true);
+                  applied.push(names[0]);
+                  return;
+                }
+              }
+            }
+          }
+        }
+      }
+      missed.push(names[0]);
+    }
+
+    if (preset.temperature !== undefined) trySet(['Temperature', 'Temp', 'WB Temperature'], preset.temperature);
+    if (preset.tint       !== undefined) trySet(['Tint', 'WB Tint'], preset.tint);
+    if (preset.exposure   !== undefined) trySet(['Exposure'], preset.exposure);
+    if (preset.contrast   !== undefined) trySet(['Contrast'], preset.contrast);
+    if (preset.highlights !== undefined) trySet(['Highlights'], preset.highlights);
+    if (preset.shadows    !== undefined) trySet(['Shadows'], preset.shadows);
+    if (preset.whites     !== undefined) trySet(['Whites'], preset.whites);
+    if (preset.blacks     !== undefined) trySet(['Blacks'], preset.blacks);
+    if (preset.saturation !== undefined) trySet(['Saturation'], preset.saturation);
+
+    var msg = 'ok:' + applied.length + '_params_on_' + targetClip.name;
+    if (missed.length) msg += '_missed_' + missed.join(',');
+    return msg;
+
+  } catch (e) { return 'error:' + e.message; }
+}
+
+function getAudioClipAtPlayhead() {
 // Searches all audio tracks. Returns 'ok:track<i>_clip<j>_name_<name>' or 'error:...'.
 function getAudioClipAtPlayhead() {
   try {

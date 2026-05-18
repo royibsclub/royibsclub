@@ -1,16 +1,70 @@
 import React, { useState } from 'react';
 import { callFn } from '../premiere/bridge';
 
-type Category = 'zooms' | 'titles' | 'voice' | 'sfx' | 'overlays' | 'screen' | 'utility';
+type Category = 'zooms' | 'titles' | 'color' | 'voice' | 'sfx' | 'overlays' | 'screen' | 'utility';
 
 const CATEGORIES: { id: Category; label: string }[] = [
-  { id: 'zooms', label: 'Zooms' },
-  { id: 'titles', label: 'Titles' },
-  { id: 'voice', label: 'Voice' },
-  { id: 'sfx', label: 'SFX' },
+  { id: 'zooms',    label: 'Zooms' },
+  { id: 'titles',   label: 'Titles' },
+  { id: 'color',    label: 'Color' },
+  { id: 'voice',    label: 'Voice' },
+  { id: 'sfx',      label: 'SFX' },
   { id: 'overlays', label: 'Overlays' },
-  { id: 'screen', label: 'Screen' },
-  { id: 'utility', label: 'Utility' },
+  { id: 'screen',   label: 'Screen' },
+  { id: 'utility',  label: 'Utility' },
+];
+
+interface LumetriPreset {
+  id: string;
+  name: string;
+  desc: string;
+  tag: string;
+  values: Partial<Record<'temperature'|'tint'|'exposure'|'contrast'|'highlights'|'shadows'|'whites'|'blacks'|'saturation', number>>;
+}
+
+const COLOR_PRESETS: LumetriPreset[] = [
+  {
+    id: 'iphone-fix',
+    name: 'iPhone Fix',
+    desc: 'Neutral warm-up and shadow lift — corrects the slightly cool and flat look of standard iPhone 16 footage.',
+    tag: 'Standard iPhone · Any scene',
+    values: { temperature: 8, highlights: -15, shadows: 10, saturation: -5 },
+  },
+  {
+    id: 'cinematic-warm',
+    name: 'Cinematic Warm',
+    desc: 'Warm, filmic look with lifted shadows and crushed blacks. Gives the "YouTube talking head" feel.',
+    tag: 'Interview · Lifestyle · Vlog',
+    values: { temperature: 20, contrast: 25, highlights: -20, shadows: 15, whites: -5, blacks: -10, saturation: -15 },
+  },
+  {
+    id: 'cool-modern',
+    name: 'Cool & Modern',
+    desc: 'Cold, slightly desaturated with higher contrast. Clean, professional social-media look.',
+    tag: 'Tech · Business · SaaS Demo',
+    values: { temperature: -12, contrast: 15, highlights: -10, shadows: 5, saturation: -8 },
+  },
+  {
+    id: 'documentary',
+    name: 'Documentary',
+    desc: 'Natural, grounded and desaturated. Minimal processing — looks like it was recorded, not produced.',
+    tag: 'Documentary · Educational · Serious',
+    values: { contrast: 10, highlights: -15, shadows: 15, saturation: -22 },
+  },
+  {
+    id: 'sunny-airy',
+    name: 'Sunny & Airy',
+    desc: 'Bright, high-key lifestyle look. Lifts shadows strongly, pulls highlights down for balance.',
+    tag: 'Outdoor · Lifestyle · Reels',
+    values: { exposure: 0.3, highlights: -25, shadows: 20, whites: 10, temperature: 12, saturation: -10 },
+  },
+  {
+    id: 'apple-log',
+    name: 'Apple Log Fix',
+    desc: 'Base correction for iPhone 16 Pro Apple Log / ProRes clips. Lifts the flat log image to a usable starting point.',
+    tag: 'iPhone 16 Pro · Apple Log · ProRes only',
+    values: { exposure: 0.5, contrast: 50, highlights: -35, shadows: 40, whites: 10, blacks: -5, saturation: 25, temperature: 15 },
+  },
 ];
 
 const TITLE_PRESETS = [
@@ -90,6 +144,9 @@ export default function EffectsPanel() {
   const [voiceBusy, setVoiceBusy] = useState(false);
   const [showManual, setShowManual] = useState(false);
 
+  const [colorResults, setColorResults] = useState<Record<string, ActionResult | null>>({});
+  const [colorBusy, setColorBusy] = useState<string | null>(null);
+
   async function doZoom() {
     setZoomBusy(true);
     const r = await callFn('addZoomPunchAtPlayhead', zoomScale);
@@ -103,6 +160,16 @@ export default function EffectsPanel() {
       setCopied(presetId);
       setTimeout(() => setCopied(null), 1500);
     });
+  }
+
+  async function applyColor(preset: LumetriPreset) {
+    setColorBusy(preset.id);
+    setColorResults((prev) => ({ ...prev, [preset.id]: null }));
+    const r = await callFn('applyLumetriPreset', JSON.stringify(preset.values));
+    const ok = r.startsWith('ok:');
+    const manual = r.startsWith('manual:');
+    setColorResults((prev) => ({ ...prev, [preset.id]: { ok, value: r } }));
+    setColorBusy(null);
   }
 
   async function doVoicePreset() {
@@ -229,6 +296,98 @@ export default function EffectsPanel() {
             ))}
             <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 8, padding: '6px 0', borderTop: '1px solid var(--border)' }}>
               Copies style name + text to clipboard. Apply via Premiere text tool.
+            </div>
+          </>
+        )}
+
+        {/* COLOR */}
+        {cat === 'color' && (
+          <>
+            <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 10, lineHeight: 1.6 }}>
+              Lumetri Color presets tuned for iPhone 16 footage. Applies to the video clip at the current playhead.
+            </div>
+
+            {COLOR_PRESETS.map((preset) => {
+              const res = colorResults[preset.id] ?? null;
+              const busy = colorBusy === preset.id;
+              const isManual = res?.value.startsWith('manual:');
+
+              // Build adjustment bars
+              const bars = Object.entries(preset.values)
+                .filter(([, v]) => v !== undefined)
+                .map(([key, val]) => ({ key, val: val as number }));
+
+              return (
+                <div key={preset.id} className="card" style={{ margin: '0 0 8px' }}>
+                  {/* Header */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 5, gap: 8 }}>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 700 }}>{preset.name}</div>
+                      <div style={{ fontSize: 9, color: 'var(--accent)', marginTop: 1 }}>{preset.tag}</div>
+                    </div>
+                    <button
+                      className="btn-primary"
+                      disabled={!!colorBusy}
+                      onClick={() => applyColor(preset)}
+                      style={{ fontSize: 9, padding: '4px 10px', whiteSpace: 'nowrap', flexShrink: 0 }}
+                    >
+                      {busy ? '…' : 'Apply'}
+                    </button>
+                  </div>
+
+                  <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 8, lineHeight: 1.5 }}>
+                    {preset.desc}
+                  </div>
+
+                  {/* Adjustment bars */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px 10px' }}>
+                    {bars.map(({ key, val }) => {
+                      const pct = Math.abs(val) / (key === 'exposure' ? 5 : 100) * 100;
+                      const clamped = Math.min(pct, 100);
+                      const pos = val >= 0;
+                      return (
+                        <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <span style={{ fontSize: 8, color: 'var(--text-muted)', width: 52, textAlign: 'right', flexShrink: 0, textTransform: 'capitalize' }}>
+                            {key}
+                          </span>
+                          <div style={{ flex: 1, height: 3, background: 'var(--bg-tertiary)', borderRadius: 2, overflow: 'hidden' }}>
+                            <div style={{
+                              height: '100%',
+                              width: `${clamped}%`,
+                              background: pos ? '#6366f1' : '#38bdf8',
+                              marginLeft: pos ? 0 : `${100 - clamped}%`,
+                              borderRadius: 2,
+                            }} />
+                          </div>
+                          <span style={{ fontSize: 8, color: pos ? '#6366f1' : '#38bdf8', width: 26, flexShrink: 0, fontFamily: 'monospace' }}>
+                            {val > 0 ? '+' : ''}{val}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Result */}
+                  {res && (
+                    <div style={{
+                      marginTop: 6,
+                      fontSize: 10,
+                      padding: '5px 8px',
+                      borderRadius: 4,
+                      background: res.ok ? 'rgba(76,175,80,0.1)' : isManual ? 'rgba(255,152,0,0.1)' : 'rgba(244,67,54,0.1)',
+                      color: res.ok ? 'var(--success)' : isManual ? 'var(--warning)' : 'var(--danger)',
+                    }}>
+                      {res.ok && `✓ ${res.value.replace('ok:', '').replace(/_/g, ' ')}`}
+                      {isManual && '⚠ Add Lumetri Color to the clip first — Effects > Video Effects > Color Correction > Lumetri Color — then apply again.'}
+                      {!res.ok && !isManual && `✗ ${res.value}`}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.6, padding: '6px 0', borderTop: '1px solid var(--border)' }}>
+              After applying, fine-tune in Premiere's Lumetri Color panel (Color workspace). Save as a new preset there to reuse across projects.
             </div>
           </>
         )}
