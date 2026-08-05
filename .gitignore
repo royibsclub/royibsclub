@@ -4,3 +4,8 @@ dist/
 *.log
 .DS_Store
 server/src/data/profiles/
+
+# generated portfolio assets (rebuild with portfolio/extract.py)
+portfolio/assets/
+portfolio/artifact.html
+__pycache__/
